@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <skymarlin/TypeDefinitions.hpp>
+#include <skymarlin/network/TypeDefinitions.hpp>
 #include <boost/core/noncopyable.hpp>
 #include <boost/asio/buffer.hpp>
 

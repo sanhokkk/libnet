@@ -1,7 +1,8 @@
-#include "ConstByteBuffer.hpp"
+#include <skymarlin/network/packet/ConstByteBuffer.hpp>
 
 #include <cmath>
 #include <type_traits>
+
 #include <skymarlin/network/packet/ByteBufferExceptions.hpp>
 
 namespace skymarlin::network::packet {

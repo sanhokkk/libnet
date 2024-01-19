@@ -1,8 +1,8 @@
-#include "Session.hpp"
+#include <skymarlin/network/Session.hpp>
 
 #include <iostream>
 
-#include <skymarlin/network/ByteBufferExceptions.hpp>
+#include <skymarlin/network/packet/ByteBufferExceptions.hpp>
 
 namespace skymarlin::network {
 Session::Session(tcp::socket socket)
@@ -59,10 +59,11 @@ void Session::ReadPacketHandler(const boost::system::error_code& ec, size_t /*by
     const packet::ConstByteBuffer _buffer(buffer);
     try {
         packet->Deserialize(_buffer);
-        //TODO: resolve & deserialize packet, handle it
+        // TODO: resolve & deserialize packet, handle it
     } catch (const packet::ByteBufferException& e) {
         std::cout << e.what() << std::endl;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e) {
         std::cout << e.what() << std::endl;
     }
 }

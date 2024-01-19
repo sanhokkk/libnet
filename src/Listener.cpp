@@ -1,10 +1,10 @@
-#include "Listener.hpp"
+#include <skymarlin/network/Listener.hpp>
 
-#include <skymarlin/network/Session.hpp>
 #include <iostream>
+#include <skymarlin/network/Session.hpp>
 
 namespace skymarlin::network {
-Listener::Listener(boost::asio::io_context &io_context, short port)
+Listener::Listener(boost::asio::io_context& io_context, short port)
     : acceptor_(io_context, tcp::endpoint(tcp::v6(), port)) {
 }
 

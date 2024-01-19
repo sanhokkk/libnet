@@ -1,3 +1,9 @@
 # Meson
 build
 build[dD]ir
+
+# VS Code
+.vscode
+
+# JetBrains
+.idea

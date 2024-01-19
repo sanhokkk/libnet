@@ -10,11 +10,17 @@ project_headers = [
   'include/skymarlin/network/Listener.hpp',
   'include/skymarlin/network/Session.hpp',
   'include/skymarlin/network/TypeDefinitions.hpp',
+  'include/skymarlin/network/packet/ByteBufferExceptions.hpp',
+  'include/skymarlin/network/packet/ConstByteBuffer.hpp',
+  'include/skymarlin/network/packet/MutableByteBuffer.hpp',
+  'include/skymarlin/network/packet/Packet.hpp',
 ]
 
 project_sources = [
   'src/Listener.cpp',
   'src/Session.cpp',
+  'src/packet/ConstByteBuffer.cpp',
+  'src/packet/MutableByteBuffer.cpp',
 ]
 
 project_tests = [
@@ -24,7 +30,9 @@ build_args = [
 ]
 
 ### Target ###
-boost_dep = dependency('boost')
+project_dependencies = [
+  dependency('boost')
+]
 
 inc = include_directories('include')
 
@@ -47,7 +55,7 @@ project_target = shared_library(
   cpp_args : build_args,
   gnu_symbol_visibility : 'hidden',
   include_directories : inc,
-  dependencies: [boost_dep],
+  dependencies: project_dependencies,
 )
 
 ### Project ###

@@ -1,7 +1,8 @@
-#include "MutableByteBuffer.hpp"
+#include <skymarlin/network/packet/MutableByteBuffer.hpp>
 
 #include <cmath>
 #include <limits>
+
 #include <skymarlin/network/packet/ByteBufferExceptions.hpp>
 
 namespace skymarlin::network::packet {
