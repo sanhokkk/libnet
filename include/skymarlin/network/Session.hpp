@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <queue>
 
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
@@ -36,12 +37,13 @@ private:
 
     void OnReadPacket(PacketLength packet_length, PacketType packet_type, const boost::asio::mutable_buffer& buffer);
 
-    void AsyncSend();
+    void AsyncWrite(packet::MutableByteBuffer&& buffer);
 
     tcp::socket socket_;
-    packet::ConstByteBuffer header_buffer_;
+    boost::asio::streambuf streambuf_;
     byte header_buffer_source_[packet::PACKET_HEADER_SIZE]{};
-    boost::asio::streambuf buffer_;
+    packet::ConstByteBuffer header_buffer_;
+    std::queue<packet::MutableByteBuffer> write_queue_;
 
     std::atomic<bool> closed_, closing_;
 };

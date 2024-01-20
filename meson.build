@@ -7,6 +7,7 @@ project(
 project_description = 'Skymarlin TCP network library'
 
 project_headers = [
+  'include/skymarlin/network/Connector.hpp',
   'include/skymarlin/network/Listener.hpp',
   'include/skymarlin/network/Server.hpp',
   'include/skymarlin/network/Session.hpp',
@@ -59,6 +60,7 @@ project_target = shared_library(
   gnu_symbol_visibility : 'hidden',
   include_directories : inc,
   dependencies: project_dependencies,
+#  cpp_pch: 'pch/pch.hpp',
 )
 
 ### Project ###

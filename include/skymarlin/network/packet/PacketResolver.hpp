@@ -11,14 +11,11 @@ public:
 
     PacketResolver() = delete;
 
-    static void Init(const std::vector<std::pair<PacketType, PacketCreator>>& creators,
-        const std::vector<std::pair<PacketType, PacketHandler>>& handlers) {
-        for (const auto& c: creators) {
-            creator_[c.first] = c.second;
-        }
-
-        for (const auto& h: handlers) {
-            handler_[h.first] = h.second;
+    template<typename T>
+        requires std::same_as<T, PacketCreator> || std::same_as<T, PacketHandler>
+    static void Init(const std::vector<std::pair<PacketType, T>>&& registers) {
+        for (const auto& r: registers) {
+            creator_[r.first] = r.second;
         }
     }
 

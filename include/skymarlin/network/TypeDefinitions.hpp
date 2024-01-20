@@ -1,10 +1,7 @@
 #pragma once
 
-// #include <cstddef>
-
 namespace skymarlin {
 using byte = unsigned char;
-// using std::byte;
 using i8 = char;
 using i16 = short;
 using i32 = int;

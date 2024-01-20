@@ -14,6 +14,13 @@ ConstByteBuffer::ConstByteBuffer(byte* buffer, size_t size)
     : data_(buffer), size_(size) {
 }
 
+ConstByteBuffer::ConstByteBuffer(ConstByteBuffer&& x) noexcept
+    : data_(x.data_), size_(x.size_), rpos_(x.rpos_) {
+    x.data_ = nullptr;
+    x.size_ = 0;
+    x.rpos_ = 0;
+}
+
 
 template<NumericType T>
 T ConstByteBuffer::Read() const {

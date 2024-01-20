@@ -8,8 +8,6 @@ using PacketLength = u16;
 using PacketType = u8;
 
 constexpr static size_t PACKET_HEADER_SIZE = sizeof(u32);
-// constexpr static size_t PACKET_LENGTH_SIZE = sizeof(PacketLength);
-// constexpr static size_t PACKET_TYPE_SIZE = sizeof(PacketType);
 
 
 class Packet : boost::noncopyable {

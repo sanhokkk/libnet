@@ -9,6 +9,8 @@ public:
 
     MutableByteBuffer(byte* buffer, size_t size);
 
+    MutableByteBuffer(MutableByteBuffer&& x) noexcept;
+
     void Clear();
 
     template<NumericType T>

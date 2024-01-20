@@ -89,7 +89,7 @@ void Session::OnReadHeader() {
 
     std::shared_ptr<boost::asio::mutable_buffer> buffer;
     try {
-        buffer = std::make_shared<boost::asio::mutable_buffer>(buffer_.prepare(packet_length));
+        buffer = std::make_shared<boost::asio::mutable_buffer>(streambuf_.prepare(packet_length));
     } catch (const std::length_error& e) {
         std::cout << "Insuffcient buffer size to prepare: " << e.what() << std::endl;
         Close();
@@ -125,8 +125,6 @@ void Session::OnReadHeader() {
 
 void Session::OnReadPacket(PacketLength packet_length, PacketType packet_type,
     const boost::asio::mutable_buffer& buffer) {
-    // auto packet = std::make_shared<packet::Packet>(packet_length, packet_type); //TODO: Resolve packet, build from factory
-
     packet::PacketResolver::PacketCreator packet_creator;
     packet::PacketResolver::PacketHandler packet_handler;
     if (!packet::PacketResolver::TryGetPacketCreator(packet_type, packet_creator)
@@ -138,5 +136,16 @@ void Session::OnReadPacket(PacketLength packet_length, PacketType packet_type,
     auto packet = packet_creator(packet_length, packet_type);
     packet->Deserialize(packet::ConstByteBuffer(static_cast<byte*>(buffer.data()), buffer.size()));
     packet_handler(std::move(packet)); // TODO: async call
+}
+
+void Session::AsyncWrite(packet::MutableByteBuffer&& buffer) {
+    // TODO: lauch as async?
+    write_queue_.push(std::move(buffer));
+
+    // TODO: Extract
+    // const packet::MutableByteBuffer &front_packet = write_queue_.front();
+    // boost::system::error_code ec;
+    // auto b = boost::asio::buffer(front_packet.data(), front_packet.size());
+    // size_t bytesSent = socket_.async_write_some(, ec);
 }
 }

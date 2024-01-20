@@ -14,6 +14,16 @@ MutableByteBuffer::MutableByteBuffer(byte* buffer, size_t size)
     : ConstByteBuffer(buffer, size) {
 }
 
+MutableByteBuffer::MutableByteBuffer(MutableByteBuffer&& x) noexcept
+    : ConstByteBuffer(x.data_, x.size_), wpos_(x.wpos_) {
+    rpos_ = x.rpos_;
+
+    x.data_ = nullptr;
+    x.size_ = 0;
+    x.rpos_ = 0;
+    x.wpos_ = 0;
+}
+
 void MutableByteBuffer::Clear() {
     std::memset(data_, 0, size_);
 }
