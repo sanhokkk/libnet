@@ -11,7 +11,7 @@ concept NumericType = std::is_arithmetic_v<T>;
 
 class ConstByteBuffer : boost::noncopyable {
 public:
-    explicit ConstByteBuffer(const boost::asio::const_buffer& buffer);
+    // explicit ConstByteBuffer(const boost::asio::const_buffer& buffer);
 
     ConstByteBuffer(byte* buffer, size_t size);
 

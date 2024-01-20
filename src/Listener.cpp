@@ -4,27 +4,29 @@
 #include <skymarlin/network/Session.hpp>
 
 namespace skymarlin::network {
-Listener::Listener(boost::asio::io_context& io_context, short port)
-    : acceptor_(io_context, tcp::endpoint(tcp::v6(), port)) {
+Listener::Listener(boost::asio::io_context& io_context, const short port, Session::SessionCreator&& session_creator)
+    : acceptor_(io_context, tcp::endpoint(tcp::v6(), port)),
+      session_creator_(std::move(session_creator)) {
 }
 
 void Listener::Run() {
     std::cout << "Start accepting on: " << acceptor_.local_endpoint() << std::endl;
-    start_accept();
+    StartAccept();
 }
 
-void Listener::start_accept() {
+void Listener::StartAccept() {
     acceptor_.async_accept([this](boost::system::error_code ec, tcp::socket socket) {
-        if (!ec) {
+        if (ec) {
+            std::cout << "Error accepting socket: " << ec.message() << std::endl;
+        } else {
             std::cout << socket.remote_endpoint() << " connecting to "
                     << socket.local_endpoint() << '\n';
 
-            std::make_shared<Session>(std::move(socket))->run();
-        } else {
-            std::cout << "error: " << ec.message() << std::endl;
+            // TODO: Register to session manager
+            session_creator_(std::move(socket))->Run();
         }
 
-        start_accept();
+        StartAccept();
     });
 }
 }

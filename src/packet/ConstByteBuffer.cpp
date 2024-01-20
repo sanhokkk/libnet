@@ -6,9 +6,9 @@
 #include <skymarlin/network/packet/ByteBufferExceptions.hpp>
 
 namespace skymarlin::network::packet {
-ConstByteBuffer::ConstByteBuffer(const boost::asio::const_buffer& buffer)
+/*ConstByteBuffer::ConstByteBuffer(const boost::asio::const_buffer& buffer)
     : data_(boost::asio::buffer_cast<byte*>(buffer)), size_(buffer.size()) {
-}
+}*/
 
 ConstByteBuffer::ConstByteBuffer(byte* buffer, size_t size)
     : data_(buffer), size_(size) {

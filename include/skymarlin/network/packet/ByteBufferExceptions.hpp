@@ -7,7 +7,7 @@ class ByteBufferException : public std::exception {
 public:
     ~ByteBufferException() override = default;
 
-    char const* what() const override { return message_.c_str(); }
+    const char* what() const noexcept override { return message_.c_str(); }
 
 protected:
     std::string& message() noexcept { return message_; }

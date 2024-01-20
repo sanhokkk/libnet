@@ -8,16 +8,19 @@ project_description = 'Skymarlin TCP network library'
 
 project_headers = [
   'include/skymarlin/network/Listener.hpp',
+  'include/skymarlin/network/Server.hpp',
   'include/skymarlin/network/Session.hpp',
   'include/skymarlin/network/TypeDefinitions.hpp',
   'include/skymarlin/network/packet/ByteBufferExceptions.hpp',
   'include/skymarlin/network/packet/ConstByteBuffer.hpp',
   'include/skymarlin/network/packet/MutableByteBuffer.hpp',
   'include/skymarlin/network/packet/Packet.hpp',
+  'include/skymarlin/network/packet/PacketResolver.hpp',
 ]
 
 project_sources = [
   'src/Listener.cpp',
+  'src/Server.cpp',
   'src/Session.cpp',
   'src/packet/ConstByteBuffer.cpp',
   'src/packet/MutableByteBuffer.cpp',

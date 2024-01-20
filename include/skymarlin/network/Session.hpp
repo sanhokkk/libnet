@@ -9,26 +9,40 @@
 
 namespace skymarlin::network {
 using boost::asio::ip::tcp;
+using packet::PacketLength;
+using packet::PacketType;
 
 class Session : public std::enable_shared_from_this<Session>, boost::noncopyable {
 public:
-    explicit Session(tcp::socket socket);
+    using SessionCreator = std::function<std::shared_ptr<Session>(tcp::socket&&)>;
 
-    ~Session();
+    explicit Session(tcp::socket&& socket);
+
+    virtual ~Session();
 
     void Run();
 
+    void Close();
+
+    bool IsOpen() const;
+
+protected:
+    virtual void OnClose() = 0;
+
 private:
-    void ReadHeader();
+    void AsyncReadHeader();
 
-    void ReadHeaderHandler(const boost::system::error_code& ec, size_t /*bytes_transferred*/);
+    void OnReadHeader();
 
-    void ReadPacketHandler(const boost::system::error_code& ec, size_t /*bytes_transferred*/,
-        std::unique_ptr<packet::Packet> packet, boost::asio::mutable_buffer buffer);
+    void OnReadPacket(PacketLength packet_length, PacketType packet_type, const boost::asio::mutable_buffer& buffer);
+
+    void AsyncSend();
 
     tcp::socket socket_;
     packet::ConstByteBuffer header_buffer_;
     byte header_buffer_source_[packet::PACKET_HEADER_SIZE]{};
     boost::asio::streambuf buffer_;
+
+    std::atomic<bool> closed_, closing_;
 };
 }

@@ -3,33 +3,32 @@
 #include <skymarlin/network/TypeDefinitions.hpp>
 #include <skymarlin/network/packet/MutableByteBuffer.hpp>
 
-namespace skymarlin::network::packet
-{
-    constexpr static size_t PACKET_HEADER_SIZE = sizeof(u32);
-    constexpr static size_t PACKET_LENGTH_SIZE = sizeof(u16);
-    constexpr static size_t PACKET_TYPE_SIZE = sizeof(u8);
+namespace skymarlin::network::packet {
+using PacketLength = u16;
+using PacketType = u8;
 
-    class Packet
-    {
-    public:
-        explicit Packet(const ConstByteBuffer &header)
-        {
-            header >> length_ >> type_;
-        }
+constexpr static size_t PACKET_HEADER_SIZE = sizeof(u32);
+// constexpr static size_t PACKET_LENGTH_SIZE = sizeof(PacketLength);
+// constexpr static size_t PACKET_TYPE_SIZE = sizeof(PacketType);
 
-        virtual ~Packet() = default;
 
-        size_t length() const
-        {
-            return length_;
-        }
+class Packet : boost::noncopyable {
+public:
+    Packet(const PacketLength length, const PacketType type) : length_(length), type_(type) {
+    }
 
-        virtual void Serialize(MutableByteBuffer &buffer) = 0;
+    virtual ~Packet() = default;
 
-        virtual void Deserialize(const ConstByteBuffer &buffer) = 0;
+    size_t length() const {
+        return length_;
+    }
 
-    private:
-        u16 length_{};
-        u8 type_{};
-    };
+    virtual void Serialize(MutableByteBuffer& buffer) = 0;
+
+    virtual void Deserialize(const ConstByteBuffer& buffer) = 0;
+
+protected:
+    PacketLength length_;
+    PacketType type_;
+};
 }
