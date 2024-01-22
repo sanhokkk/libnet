@@ -4,39 +4,28 @@
 #include <unordered_map>
 
 namespace skymarlin::network::packet {
+using PacketCreator = std::function<std::unique_ptr<Packet>(PacketLength, PacketType)>;
+using PacketHandler = std::function<void(std::unique_ptr<Packet>, std::shared_ptr<Session>)>;
+
+template<typename T>
+    requires std::same_as<T, PacketCreator> || std::same_as<T, PacketHandler>
 class PacketResolver final {
 public:
-    using PacketCreator = std::function<std::unique_ptr<Packet>(PacketLength, PacketType)>;
-    using PacketHandler = std::function<void(std::unique_ptr<Packet>)>;
-
-    PacketResolver() = delete;
-
-    template<typename T>
-        requires std::same_as<T, PacketCreator> || std::same_as<T, PacketHandler>
     static void Init(const std::vector<std::pair<PacketType, T>>&& registers) {
         for (const auto& r: registers) {
-            creator_[r.first] = r.second;
+            map_[r.first] = r.second;
         }
     }
 
-    static bool TryGetPacketCreator(const PacketType type, PacketCreator& packet_creator) noexcept {
-        if (creator_.contains(type)) {
-            packet_creator = creator_[type];
-            return true;
+    static bool TryResolve(const PacketType type, T& dest) noexcept {
+        if (!map_.contains(type)) {
+            return false;
         }
-        return false;
-    }
-
-    static bool TryGetPacketHandler(const PacketType type, PacketHandler& packet_handler) noexcept {
-        if (handler_.contains(type)) {
-            packet_handler = handler_[type];
-            return true;
-        }
-        return false;
+        dest = map_[type];
+        return true;
     }
 
 private:
-    inline static std::unordered_map<PacketType, PacketCreator> creator_{};
-    inline static std::unordered_map<PacketType, PacketHandler> handler_{};
+    inline static std::unordered_map<PacketType, T> map_{};
 };
 }

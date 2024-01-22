@@ -11,7 +11,7 @@ class Listener : boost::noncopyable {
 public:
     Listener() = delete;
 
-    Listener(boost::asio::io_context& io_context, short port, Session::SessionCreator&& session_creator);
+    Listener(boost::asio::io_context& io_context, short port);
 
     ~Listener();
 
@@ -21,6 +21,5 @@ private:
     void StartAccept();
 
     tcp::acceptor acceptor_;
-    const Session::SessionCreator session_creator_;
 };
 }

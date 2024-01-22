@@ -1,12 +1,12 @@
 #pragma once
 
 #include <memory>
-#include <queue>
 
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
 #include <skymarlin/network/packet/Packet.hpp>
 #include <skymarlin/network/packet/MutableByteBuffer.hpp>
+#include <skymarlin/thread/Queue.hpp>
 
 namespace skymarlin::network {
 using boost::asio::ip::tcp;
@@ -21,30 +21,36 @@ public:
 
     virtual ~Session();
 
+    inline static SessionCreator Create {};
+
     void Run();
 
     void Close();
 
     bool IsOpen() const;
 
+    void Write(boost::asio::const_buffer&& buffer);
+
 protected:
     virtual void OnClose() = 0;
 
 private:
-    void AsyncReadHeader();
+    void ReadHeader();
 
     void OnReadHeader();
 
     void OnReadPacket(PacketLength packet_length, PacketType packet_type, const boost::asio::mutable_buffer& buffer);
 
-    void AsyncWrite(packet::MutableByteBuffer&& buffer);
+    void WriteInternal();
 
     tcp::socket socket_;
-    boost::asio::streambuf streambuf_;
+    boost::asio::streambuf read_streambuf_;
+    boost::asio::streambuf write_streambuf_;
     byte header_buffer_source_[packet::PACKET_HEADER_SIZE]{};
     packet::ConstByteBuffer header_buffer_;
-    std::queue<packet::MutableByteBuffer> write_queue_;
+
+    thread::ConcurrentQueue<boost::asio::const_buffer> write_queue_;
+    std::atomic<bool> writing_{false};
 
     std::atomic<bool> closed_, closing_;
 };
-}

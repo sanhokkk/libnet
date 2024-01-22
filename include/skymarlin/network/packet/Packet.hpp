@@ -12,14 +12,11 @@ constexpr static size_t PACKET_HEADER_SIZE = sizeof(u32);
 
 class Packet : boost::noncopyable {
 public:
-    Packet(const PacketLength length, const PacketType type) : length_(length), type_(type) {
-    }
+    Packet(const PacketLength length, const PacketType type) : length_(length), type_(type) {}
 
     virtual ~Packet() = default;
 
-    size_t length() const {
-        return length_;
-    }
+    size_t length() const { return length_; }
 
     virtual void Serialize(MutableByteBuffer& buffer) = 0;
 

@@ -4,9 +4,8 @@
 #include <skymarlin/network/Session.hpp>
 
 namespace skymarlin::network {
-Listener::Listener(boost::asio::io_context& io_context, const short port, Session::SessionCreator&& session_creator)
-    : acceptor_(io_context, tcp::endpoint(tcp::v6(), port)),
-      session_creator_(std::move(session_creator)) {
+Listener::Listener(boost::asio::io_context& io_context, const short port)
+    : acceptor_(io_context, tcp::endpoint(tcp::v6(), port)) {
 }
 
 void Listener::Run() {
