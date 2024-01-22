@@ -13,7 +13,7 @@ public:
 
     Listener(boost::asio::io_context& io_context, short port);
 
-    ~Listener();
+    ~Listener() = default;
 
     void Run();
 

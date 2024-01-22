@@ -13,7 +13,7 @@ class Server : boost::noncopyable {
 public:
     explicit Server(ServerConfig&& config);
 
-    virtual ~Server();
+    virtual ~Server() = default;
 
     void Run();
 

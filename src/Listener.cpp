@@ -22,7 +22,7 @@ void Listener::StartAccept() {
                     << socket.local_endpoint() << '\n';
 
             // TODO: Register to session manager
-            session_creator_(std::move(socket))->Run();
+            Session::Create(std::move(socket))->Run();
         }
 
         StartAccept();
