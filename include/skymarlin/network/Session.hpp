@@ -54,3 +54,4 @@ private:
 
     std::atomic<bool> closed_, closing_;
 };
+}
