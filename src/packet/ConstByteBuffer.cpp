@@ -10,7 +10,7 @@ namespace skymarlin::network::packet {
     : data_(boost::asio::buffer_cast<byte*>(buffer)), size_(buffer.size()) {
 }*/
 
-ConstByteBuffer::ConstByteBuffer(byte* buffer, size_t size)
+ConstByteBuffer::ConstByteBuffer(byte* buffer, const size_t size)
     : data_(buffer), size_(size) {
 }
 
@@ -47,7 +47,7 @@ T ConstByteBuffer::Read() const {
 }
 
 template<NumericType T>
-T ConstByteBuffer::Read(size_t pos) const {
+T ConstByteBuffer::Read(const size_t pos) const {
     if (pos + sizeof(T) > size_) {
         throw ByteBufferPositionException(true, pos, sizeof(T), size_);
     }
@@ -63,7 +63,7 @@ T ConstByteBuffer::Read(size_t pos) const {
     return value;
 }
 
-void ConstByteBuffer::Read(byte* dest, size_t n) const {
+void ConstByteBuffer::Read(byte* dest, const size_t n) const {
     if (rpos_ + n > size_) {
         throw ByteBufferPositionException(true, rpos_, n, size_);
     }
@@ -72,7 +72,7 @@ void ConstByteBuffer::Read(byte* dest, size_t n) const {
     rpos_ += n;
 }
 
-void ConstByteBuffer::Skip(size_t n) const {
+void ConstByteBuffer::Skip(const size_t n) const {
     if (rpos_ + n > size_) {
         throw ByteBufferPositionException(true, rpos_, n, size_);
     }
@@ -88,7 +88,7 @@ size_t ConstByteBuffer::size() const {
     return size_;
 }
 
-const byte& ConstByteBuffer::operator[](size_t pos) const {
+const byte& ConstByteBuffer::operator[](const size_t pos) const {
     if (pos > size_) {
         throw ByteBufferPositionException(true, pos, sizeof(byte), size_);
     }

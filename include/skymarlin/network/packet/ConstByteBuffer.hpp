@@ -28,7 +28,7 @@ public:
 
     void Read(byte* dest, size_t n) const;
 
-    void Skip(size_t skip_size) const;
+    void Skip(size_t n) const;
 
     const byte* data() const;
 

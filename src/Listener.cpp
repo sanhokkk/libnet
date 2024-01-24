@@ -14,7 +14,7 @@ void Listener::Run() {
 }
 
 void Listener::StartAccept() {
-    acceptor_.async_accept([this](boost::system::error_code ec, tcp::socket socket) {
+    acceptor_.async_accept([this](const boost::system::error_code& ec, tcp::socket socket) {
         if (ec) {
             std::cout << "Error accepting socket: " << ec.message() << std::endl;
         } else {

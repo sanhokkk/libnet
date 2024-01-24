@@ -4,8 +4,9 @@
 #include <unordered_map>
 
 namespace skymarlin::network::packet {
+using PacketCreator = std::function<std::unique_ptr<Packet>()>;
+
 class PacketResolver final {
-    using PacketCreator = std::function<std::unique_ptr<Packet>()>;
 
 public:
     static void Init(const std::vector<std::pair<PacketType, PacketCreator>>&& registers) {

@@ -6,12 +6,11 @@
 namespace skymarlin::network {
 struct ServerConfig {
     short listen_port;
-    Session::SessionCreator session_creator;
 };
 
 class Server : boost::noncopyable {
 public:
-    explicit Server(ServerConfig&& config);
+    explicit Server(const ServerConfig& config);
 
     virtual ~Server() = default;
 

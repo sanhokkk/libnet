@@ -10,7 +10,7 @@ MutableByteBuffer::MutableByteBuffer(const boost::asio::mutable_buffer& buffer)
     : ConstByteBuffer(boost::asio::buffer_cast<byte*>(buffer), buffer.size()) {
 }
 
-MutableByteBuffer::MutableByteBuffer(byte* buffer, size_t size)
+MutableByteBuffer::MutableByteBuffer(byte* buffer, const size_t size)
     : ConstByteBuffer(buffer, size) {
 }
 
@@ -49,7 +49,7 @@ void MutableByteBuffer::Append(T value) {
 }
 
 template<NumericType T>
-void MutableByteBuffer::Put(T value, size_t pos) {
+void MutableByteBuffer::Put(T value, const size_t pos) {
     if (pos + sizeof(T) > size_) {
         throw ByteBufferPositionException(false, pos, sizeof(T), size_);
     }
@@ -67,7 +67,7 @@ byte* MutableByteBuffer::data() const {
     return data_;
 }
 
-byte& MutableByteBuffer::operator[](size_t pos) const {
+byte& MutableByteBuffer::operator[](const size_t pos) const {
     if (pos > size_) {
         throw ByteBufferPositionException(true, pos, sizeof(byte), size_);
     }
