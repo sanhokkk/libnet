@@ -1,4 +1,6 @@
 *
-
 !.gitignore
-!*.wrap
+
+!abseil-cpp.wrap
+!libthread.wrap
+!protobuf.wrap

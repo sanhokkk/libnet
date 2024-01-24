@@ -34,6 +34,8 @@ build_args = [
 
 ### Target ###
 libthread_dep = dependency('libthread', fallback: ['libthread', 'libthread_dep'])
+protobuf_dep = dependency('protobuf')
+
 
 project_dependencies = [
     dependency('boost'),
@@ -41,7 +43,8 @@ project_dependencies = [
 ]
 
 public_dependencies = [
-    libthread_dep
+    libthread_dep,
+    protobuf_dep,
 ]
 
 inc = include_directories('.')

@@ -9,7 +9,7 @@ using PacketCreator = std::function<std::unique_ptr<Packet>()>;
 class PacketResolver final {
 
 public:
-    static void Init(const std::vector<std::pair<PacketType, PacketCreator>>&& registers) {
+    static void Init(const std::vector<std::pair<PacketType, PacketCreator>>& registers) {
         for (const auto& [type, creator]: registers) {
             map_[type] = creator;
         }

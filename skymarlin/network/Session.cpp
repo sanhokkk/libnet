@@ -132,7 +132,7 @@ void Session::OnReadPacket(const PacketType packet_type, const boost::asio::muta
         return;
     }
 
-    packet->Deserialize(static_cast<const byte*>(buffer.data()));
+    packet->Deserialize(buffer);
     packet->Handle(shared_from_this());
 }
 
