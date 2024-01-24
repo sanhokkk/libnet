@@ -4,27 +4,29 @@ project(
     version : '0.0.1',
     default_options : ['cpp_std=c++20', 'warning_level=3']
 )
-project_description = 'Skymarlin TCP network library'
 
 project_sources = [
-    'include/skymarlin/network/Connector.hpp',
-    'include/skymarlin/network/Listener.hpp',
-    'include/skymarlin/network/Server.hpp',
-    'include/skymarlin/network/Session.hpp',
-    'include/skymarlin/network/TypeDefinitions.hpp',
-    'include/skymarlin/network/packet/ByteBufferExceptions.hpp',
-    'include/skymarlin/network/packet/ConstByteBuffer.hpp',
-    'include/skymarlin/network/packet/MutableByteBuffer.hpp',
-    'include/skymarlin/network/packet/Packet.hpp',
-    'include/skymarlin/network/packet/PacketResolver.hpp',
-    'src/Listener.cpp',
-    'src/Server.cpp',
-    'src/Session.cpp',
-    'src/packet/ConstByteBuffer.cpp',
-    'src/packet/MutableByteBuffer.cpp',
+    'skymarlin/network/Connector.hpp',
+    'skymarlin/network/Listener.hpp',
+    'skymarlin/network/Listener.cpp',
+    'skymarlin/network/Server.hpp',
+    'skymarlin/network/Server.cpp',
+    'skymarlin/network/Session.hpp',
+    'skymarlin/network/Session.cpp',
+    'skymarlin/network/TypeDefinitions.hpp',
+    'skymarlin/network/packet/ByteBufferExceptions.hpp',
+    'skymarlin/network/packet/ConstByteBuffer.hpp',
+    'skymarlin/network/packet/ConstByteBuffer.cpp',
+    'skymarlin/network/packet/MutableByteBuffer.hpp',
+    'skymarlin/network/packet/MutableByteBuffer.cpp',
+    'skymarlin/network/packet/Packet.hpp',
+    'skymarlin/network/packet/PacketResolver.hpp',
 ]
 
 project_tests = [
+    # Unit Tests
+
+    # Functional/Integration Tests
 ]
 
 build_args = [
@@ -42,7 +44,7 @@ public_dependencies = [
     libthread_dep
 ]
 
-inc = include_directories('include')
+inc = include_directories('.')
 
 build_args += [
     '-DPROJECT_NAME=' + meson.project_name(),
