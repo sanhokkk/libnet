@@ -5,7 +5,7 @@
 #include <boost/core/noncopyable.hpp>
 #include <boost/asio/buffer.hpp>
 
-namespace skymarlin::network::packet {
+namespace skymarlin::network::utility {
 template<typename T>
 concept NumericType = std::is_arithmetic_v<T>;
 

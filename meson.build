@@ -14,13 +14,13 @@ project_sources = [
     'skymarlin/network/Session.hpp',
     'skymarlin/network/Session.cpp',
     'skymarlin/network/TypeDefinitions.hpp',
-    'skymarlin/network/packet/ByteBufferExceptions.hpp',
-    'skymarlin/network/packet/ConstByteBuffer.hpp',
-    'skymarlin/network/packet/ConstByteBuffer.cpp',
-    'skymarlin/network/packet/MutableByteBuffer.hpp',
-    'skymarlin/network/packet/MutableByteBuffer.cpp',
     'skymarlin/network/packet/Packet.hpp',
     'skymarlin/network/packet/PacketResolver.hpp',
+    'skymarlin/network/utility/ByteBufferExceptions.hpp',
+    'skymarlin/network/utility/ConstByteBuffer.hpp',
+    'skymarlin/network/utility/ConstByteBuffer.cpp',
+    'skymarlin/network/utility/MutableByteBuffer.hpp',
+    'skymarlin/network/utility/MutableByteBuffer.cpp',
 ]
 
 project_tests = [

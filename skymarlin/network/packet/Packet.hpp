@@ -1,7 +1,7 @@
 #pragma once
 
 #include <skymarlin/network/TypeDefinitions.hpp>
-#include <skymarlin/network/packet/MutableByteBuffer.hpp>
+#include <skymarlin/network/utility/MutableByteBuffer.hpp>
 
 namespace skymarlin::network {
 class Session;
@@ -20,9 +20,9 @@ public:
 
     virtual ~Packet() = default;
 
-    virtual void Serialize(byte* buffer) const = 0;
+    virtual void Serialize(boost::asio::mutable_buffer& buffer) const = 0;
 
-    virtual void Deserialize(const byte* buffer)= 0;
+    virtual void Deserialize(boost::asio::mutable_buffer& buffer)= 0;
 
     virtual void Handle(std::shared_ptr<Session> session) = 0;
 };

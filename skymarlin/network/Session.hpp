@@ -5,7 +5,7 @@
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
 #include <skymarlin/network/packet/Packet.hpp>
-#include <skymarlin/network/packet/MutableByteBuffer.hpp>
+#include <skymarlin/network/utility/MutableByteBuffer.hpp>
 #include <skymarlin/thread/Queue.hpp>
 
 namespace skymarlin::network {
@@ -47,7 +47,7 @@ private:
     boost::asio::streambuf read_streambuf_;
     boost::asio::streambuf write_streambuf_;
     byte header_buffer_source_[packet::PACKET_HEADER_SIZE]{};
-    packet::ConstByteBuffer header_buffer_;
+    utility::ConstByteBuffer header_buffer_;
 
     thread::ConcurrentQueue<boost::asio::const_buffer> write_queue_;
     std::atomic<bool> writing_{false};

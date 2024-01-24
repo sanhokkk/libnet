@@ -1,8 +1,8 @@
 #pragma once
 
-#include <skymarlin/network/packet/ConstByteBuffer.hpp>
+#include <skymarlin/network/utility/ConstByteBuffer.hpp>
 
-namespace skymarlin::network::packet {
+namespace skymarlin::network::utility {
 class MutableByteBuffer : public ConstByteBuffer {
 public:
     explicit MutableByteBuffer(const boost::asio::mutable_buffer& buffer);

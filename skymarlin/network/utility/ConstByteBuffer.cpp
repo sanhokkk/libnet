@@ -1,11 +1,11 @@
-#include <skymarlin/network/packet/ConstByteBuffer.hpp>
+#include <skymarlin/network/utility/ConstByteBuffer.hpp>
 
 #include <cmath>
 #include <type_traits>
 
-#include <skymarlin/network/packet/ByteBufferExceptions.hpp>
+#include <skymarlin/network/utility/ByteBufferExceptions.hpp>
 
-namespace skymarlin::network::packet {
+namespace skymarlin::network::utility {
 /*ConstByteBuffer::ConstByteBuffer(const boost::asio::const_buffer& buffer)
     : data_(boost::asio::buffer_cast<byte*>(buffer)), size_(buffer.size()) {
 }*/

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <utility>
 
-#include <skymarlin/network/packet/ByteBufferExceptions.hpp>
+#include <skymarlin/network/utility/ByteBufferExceptions.hpp>
 #include <skymarlin/network/packet/PacketResolver.hpp>
 
 namespace skymarlin::network {
@@ -76,7 +76,7 @@ void Session::OnReadHeader() {
     PacketType packet_type;
     try {
         header_buffer_ >> packet_length >> packet_type;
-    } catch (const packet::ByteBufferException& e) {
+    } catch (const utility::ByteBufferException& e) {
         std::cout << "Error reading bytes on header: " << e.what() << std::endl;
         Close();
         return;

@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-namespace skymarlin::network::packet {
+namespace skymarlin::network::utility {
 class ByteBufferException : public std::exception {
 public:
     ~ByteBufferException() override = default;

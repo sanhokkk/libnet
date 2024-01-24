@@ -6,6 +6,7 @@
 namespace skymarlin::network {
 struct ServerConfig {
     short listen_port;
+    // TODO: Read from config file
 };
 
 class Server : boost::noncopyable {

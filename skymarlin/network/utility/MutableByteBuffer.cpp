@@ -1,11 +1,11 @@
-#include <skymarlin/network/packet/MutableByteBuffer.hpp>
+#include <skymarlin/network/utility/MutableByteBuffer.hpp>
 
 #include <cmath>
 #include <limits>
 
-#include <skymarlin/network/packet/ByteBufferExceptions.hpp>
+#include <skymarlin/network/utility/ByteBufferExceptions.hpp>
 
-namespace skymarlin::network::packet {
+namespace skymarlin::network::utility {
 MutableByteBuffer::MutableByteBuffer(const boost::asio::mutable_buffer& buffer)
     : ConstByteBuffer(boost::asio::buffer_cast<byte*>(buffer), buffer.size()) {
 }
