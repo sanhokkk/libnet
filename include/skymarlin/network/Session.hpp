@@ -29,7 +29,7 @@ public:
 
     bool IsOpen() const;
 
-    void Write(boost::asio::const_buffer&& buffer);
+    void Write(boost::asio::const_buffer& buffer);
 
 protected:
     virtual void OnClose() = 0;
@@ -39,7 +39,7 @@ private:
 
     void OnReadHeader();
 
-    void OnReadPacket(PacketLength packet_length, PacketType packet_type, const boost::asio::mutable_buffer& buffer);
+    void OnReadPacket(PacketType packet_type, const boost::asio::mutable_buffer& buffer);
 
     void WriteInternal();
 

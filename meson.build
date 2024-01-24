@@ -34,9 +34,15 @@ build_args = [
 ]
 
 ### Target ###
+libthread_dep = dependency('libthread', fallback: ['libthread', 'libthread_dep'])
+
 project_dependencies = [
     dependency('boost'),
-    dependency('libthread', fallback: ['libthread', 'libthread_dep']),
+    libthread_dep
+]
+
+public_dependencies = [
+    libthread_dep
 ]
 
 inc = include_directories('include')
@@ -59,6 +65,7 @@ project_target = library(
 
 ### Project ###
 project_dep = declare_dependency(
+    dependencies: public_dependencies,
     include_directories : inc,
     link_with : project_target,
 )

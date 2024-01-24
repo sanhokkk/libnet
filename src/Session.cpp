@@ -117,34 +117,26 @@ void Session::OnReadHeader() {
                 return;
             }
 
-            self->OnReadPacket(packet_length, packet_type, *buffer);
+            self->OnReadPacket(packet_type, *buffer);
+            self->read_streambuf_.consume(bytes_transferred);
         });
 
     ReadHeader();
 }
 
-void Session::OnReadPacket(PacketLength packet_length, PacketType packet_type,
-    const boost::asio::mutable_buffer& buffer) {
-    using packet::PacketCreator;
-    using packet::PacketHandler;
-
-    PacketCreator packet_creator;
-    PacketHandler packet_handler;
-    if (!packet::PacketResolver<PacketCreator>::TryResolve(packet_type, packet_creator)
-        || !packet::PacketResolver<PacketHandler>::TryResolve(packet_type, packet_handler)) {
+void Session::OnReadPacket(const PacketType packet_type, const boost::asio::mutable_buffer& buffer) {
+    std::unique_ptr<packet::Packet> packet;
+    if (!packet::PacketResolver::TryResolve(packet_type, packet)) {
         std::cout << "Invalid packet type: " << packet_type << std::endl;
         Close();
         return;
     }
 
-    auto packet = packet_creator(packet_length, packet_type);
-    packet->Deserialize(packet::ConstByteBuffer(static_cast<byte*>(buffer.data()), packet_length));
-    packet_handler(std::move(packet), shared_from_this()); // TODO: async call, pass session - shared_ptr?
-
-    read_streambuf_.consume(packet_length);
+    packet->Deserialize(static_cast<const byte*>(buffer.data()));
+    packet->Handle(shared_from_this());
 }
 
-void Session::Write(boost::asio::const_buffer&& buffer) {
+void Session::Write(boost::asio::const_buffer& buffer) {
     write_queue_.Push(std::move(buffer));
 
     if (writing_.exchange(true))
