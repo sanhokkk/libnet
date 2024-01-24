@@ -6,7 +6,7 @@ project(
 )
 project_description = 'Skymarlin TCP network library'
 
-project_headers = [
+project_sources = [
     'include/skymarlin/network/Connector.hpp',
     'include/skymarlin/network/Listener.hpp',
     'include/skymarlin/network/Server.hpp',
@@ -17,9 +17,6 @@ project_headers = [
     'include/skymarlin/network/packet/MutableByteBuffer.hpp',
     'include/skymarlin/network/packet/Packet.hpp',
     'include/skymarlin/network/packet/PacketResolver.hpp',
-]
-
-project_sources = [
     'src/Listener.cpp',
     'src/Server.cpp',
     'src/Session.cpp',
@@ -55,9 +52,7 @@ build_args += [
 project_target = library(
     meson.project_name(),
     project_sources,
-    install : true,
     cpp_args : build_args,
-    gnu_symbol_visibility : 'hidden',
     include_directories : inc,
     dependencies : project_dependencies,
     #  cpp_pch: 'pch/pch.hpp',
