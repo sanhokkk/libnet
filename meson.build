@@ -34,17 +34,27 @@ build_args = [
 
 ### Target ###
 libthread_dep = dependency('libthread', fallback: ['libthread', 'libthread_dep'])
-protobuf_dep = dependency('protobuf')
+protobuf_dep = dependency('protobuf', fallback : ['protobuf', 'protobuf_dep'])
 
+absl_libs = [
+    'absl_base',
+]
+absl_deps = []
+foreach lib : absl_libs
+    absl_deps += dependency(lib)
+endforeach
 
 project_dependencies = [
     dependency('boost'),
-    libthread_dep
+    libthread_dep,
+    protobuf_dep,
+    absl_deps
 ]
 
 public_dependencies = [
     libthread_dep,
     protobuf_dep,
+    absl_deps
 ]
 
 inc = include_directories('.')
