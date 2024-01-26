@@ -31,8 +31,13 @@ public:
 
     static void WriteHeader(byte* buffer, const PacketLength length, const PacketType type) {
         //TODO: Check buffer has at least header size
-        utility::MutableByteBuffer writer(buffer, PACKET_HEADER_SIZE);
-        writer << length << type;
+        size_t pos = 0;
+
+        std::memset(buffer + pos, length, sizeof(PacketLength));
+        pos += sizeof(PacketLength);
+
+        std::memset(buffer + pos, type, sizeof(PacketType));
+        pos += sizeof(PacketType);
     }
 };
 }
