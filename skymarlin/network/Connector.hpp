@@ -1,4 +1,4 @@
-#prgma once
+#pragma once
 
 namespace skymarlin::network {
 class Connector : boost::noncopyable {

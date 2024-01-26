@@ -1,11 +1,11 @@
 #pragma once
 
 #include <string>
-#include <skymarlin/network/TypeDefinitions.hpp>
+#include <skymarlin/utility/TypeDefinitions.hpp>
 #include <boost/core/noncopyable.hpp>
 #include <boost/asio/buffer.hpp>
 
-namespace skymarlin::network::utility {
+namespace skymarlin::utility {
 template<typename T>
 concept NumericType = std::is_arithmetic_v<T>;
 

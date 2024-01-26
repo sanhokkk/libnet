@@ -5,7 +5,7 @@
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
 #include <skymarlin/network/packet/Packet.hpp>
-#include <skymarlin/network/utility/MutableByteBuffer.hpp>
+#include <skymarlin/utility/MutableByteBuffer.hpp>
 #include <skymarlin/thread/Queue.hpp>
 
 namespace skymarlin::network {

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <skymarlin/network/TypeDefinitions.hpp>
-#include <skymarlin/network/utility/MutableByteBuffer.hpp>
+#include <skymarlin/utility/TypeDefinitions.hpp>
 
 namespace skymarlin::network {
 class Session;

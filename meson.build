@@ -6,11 +6,15 @@ project(
 )
 
 project_sources = [
+    ## network
     'skymarlin/network/Listener.cpp',
     'skymarlin/network/Server.cpp',
     'skymarlin/network/Session.cpp',
-    'skymarlin/network/utility/ConstByteBuffer.cpp',
-    'skymarlin/network/utility/MutableByteBuffer.cpp',
+    ## utility
+    'skymarlin/utility/ConstByteBuffer.cpp',
+    'skymarlin/utility/MutableByteBuffer.cpp',
+    ## protocol
+    'skymarlin/protocol/chat/ChatMessage.pb.cc',
 ]
 
 project_tests = [
@@ -25,11 +29,17 @@ build_args = [
 ]
 
 ### Target ###
+#TODO: Compile proto defs to classes.
+
+protobuf_dep = dependency('protobuf')
+absl_base_dep = dependency('absl_base')
 libthread_dep = dependency('libthread', fallback: ['libthread', 'libthread_dep'])
 
 project_dependencies = [
     dependency('boost'),
     libthread_dep,
+    protobuf_dep,
+    absl_base_dep,
 ]
 
 public_dependencies = [
@@ -38,7 +48,7 @@ public_dependencies = [
 
 inc = include_directories('.')
 
-project_target = library(
+project_target = static_library(
     meson.project_name(),
     project_sources,
     cpp_args : build_args,

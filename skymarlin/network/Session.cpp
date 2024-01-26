@@ -3,7 +3,7 @@
 #include <iostream>
 #include <utility>
 
-#include <skymarlin/network/utility/ByteBufferExceptions.hpp>
+#include <skymarlin/utility/ByteBufferExceptions.hpp>
 #include <skymarlin/network/packet/PacketResolver.hpp>
 
 namespace skymarlin::network {
