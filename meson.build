@@ -44,6 +44,8 @@ project_dependencies = [
 
 public_dependencies = [
     libthread_dep,
+    protobuf_dep,
+    absl_base_dep,
 ]
 
 inc = include_directories('.')
