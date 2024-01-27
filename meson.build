@@ -10,15 +10,19 @@ project_sources = [
     'skymarlin/network/Listener.cpp',
     'skymarlin/network/Server.cpp',
     'skymarlin/network/Session.cpp',
+
     ## utility
     'skymarlin/utility/ConstByteBuffer.cpp',
     'skymarlin/utility/MutableByteBuffer.cpp',
+
     ## protocol
     'skymarlin/protocol/chat/ChatMessage.pb.cc',
 ]
 
 project_tests = [
     # Unit Tests
+    'skymarlin/network/PacketResolver.test.cpp',
+    'skymarlin/utility/MutableByteBuffer.test.cpp',
 
     # Functional/Integration Tests
 ]
@@ -33,7 +37,7 @@ build_args = [
 
 protobuf_dep = dependency('protobuf')
 absl_base_dep = dependency('absl_base')
-libthread_dep = dependency('libthread', fallback: ['libthread', 'libthread_dep'])
+libthread_dep = dependency('libthread', fallback : ['libthread', 'libthread_dep'])
 
 project_dependencies = [
     dependency('boost'),
@@ -61,23 +65,20 @@ project_target = static_library(
 
 ### Project ###
 project_dep = declare_dependency(
-    dependencies: public_dependencies,
+    dependencies : public_dependencies,
     include_directories : inc,
     link_with : project_target,
 )
 set_variable(meson.project_name() + '_dep', project_dep)
 
-### Unit Tests ###
-# if meson.is_subproject() == false
-#   add_languages('cpp')
-#   subdir('tests')
+### Tests ###
+if meson.is_subproject() == false
+    gtest_dep = dependency('gtest', main : true)
+    test_exec = executable(
+        'run_tests',
+        files(project_tests),
+        dependencies : [project_dep, gtest_dep],
+    )
 
-#   test('all_tests',
-#     executable(
-#       'run_tests',
-#       files(project_test_files),
-#       dependencies : [project_dep, test_dep],
-#       install : false
-#     )
-#   )
-# endif
+    test('all_tests', test_exec)
+endif

@@ -2,7 +2,6 @@
 
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
-#include <skymarlin/network/Session.hpp>
 
 namespace skymarlin::network {
 using boost::asio::ip::tcp;

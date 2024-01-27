@@ -21,6 +21,7 @@ public:
     ByteBufferPositionException(bool read, size_t pos, size_t value_size, size_t buffer_size) {
         std::ostringstream ss;
 
+        //TODO: Use std::format
         ss << "Attempted to " << (read ? "read " : "write ") << value_size << " bytes in ByteBuffer (pos: " << pos <<
                 " size: " << buffer_size << " bytes )";
 

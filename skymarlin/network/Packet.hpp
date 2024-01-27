@@ -1,20 +1,18 @@
 #pragma once
 
+#include <boost/asio.hpp>
 #include <skymarlin/utility/TypeDefinitions.hpp>
 
 namespace skymarlin::network {
-class Session;
-}
-
-namespace skymarlin::network::packet {
 using PacketLength = u16; // Exclude header length
 using PacketType = u8;
 // Reserve u8 for crypto type
 
 constexpr static size_t PACKET_HEADER_SIZE = sizeof(PacketLength) + sizeof(PacketType);
 
+class Session;
 
-class Packet : boost::noncopyable {
+class Packet {
 public:
     Packet() = default;
 

@@ -2,12 +2,12 @@
 
 #include <functional>
 #include <unordered_map>
+#include <skymarlin/network/Packet.hpp>
 
-namespace skymarlin::network::packet {
+namespace skymarlin::network {
 using PacketCreator = std::function<std::unique_ptr<Packet>()>;
 
 class PacketResolver final {
-
 public:
     static void Init(const std::vector<std::pair<PacketType, PacketCreator>>& registers) {
         for (const auto& [type, creator]: registers) {
@@ -15,11 +15,11 @@ public:
         }
     }
 
-    static bool TryResolve(const PacketType type, std::unique_ptr<Packet>& dest) {
+    static bool TryResolve(const PacketType type, std::unique_ptr<Packet>& target) {
         if (!map_.contains(type)) {
             return false;
         }
-        dest = map_[type]();
+        target = map_[type]();
         return true;
     }
 

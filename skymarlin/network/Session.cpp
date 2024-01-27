@@ -4,11 +4,11 @@
 #include <utility>
 
 #include <skymarlin/utility/ByteBufferExceptions.hpp>
-#include <skymarlin/network/packet/PacketResolver.hpp>
+#include <skymarlin/network/PacketResolver.hpp>
 
 namespace skymarlin::network {
 Session::Session(tcp::socket&& socket)
-    : socket_(std::move(socket)), header_buffer_(header_buffer_source_, packet::PACKET_HEADER_SIZE),
+    : socket_(std::move(socket)), header_buffer_(header_buffer_source_, PACKET_HEADER_SIZE),
       closed_(false), closing_(false) {
     boost::system::error_code ec;
     socket_.set_option(tcp::no_delay(true), ec);
@@ -54,7 +54,7 @@ void Session::ReadHeader() {
 
     boost::asio::async_read(socket_,
         boost::asio::buffer(header_buffer_source_),
-        boost::asio::transfer_exactly(packet::PACKET_HEADER_SIZE),
+        boost::asio::transfer_exactly(PACKET_HEADER_SIZE),
         [self = shared_from_this()](const boost::system::error_code& ec, const size_t bytes_transferred) {
             if (ec) {
                 std::cout << "Error reading packet header: " << ec.message() << std::endl;
@@ -125,8 +125,8 @@ void Session::OnReadHeader() {
 }
 
 void Session::OnReadPacket(const PacketType packet_type, const boost::asio::mutable_buffer& buffer) {
-    std::unique_ptr<packet::Packet> packet;
-    if (!packet::PacketResolver::TryResolve(packet_type, packet)) {
+    std::unique_ptr<Packet> packet;
+    if (!PacketResolver::TryResolve(packet_type, packet)) {
         std::cout << "Invalid packet type: " << packet_type << std::endl;
         Close();
         return;
