@@ -1,10 +1,10 @@
 #pragma once
 
-#include <skymarlin/network/packet/Packet.hpp>
+#include <skymarlin/network/Packet.hpp>
 #include <skymarlin/protocol/chat/proto/ChatMessage.pb.h>
 
 namespace skymarlin::protocol::chat {
-class ChatMessagePacket final : public network::packet::Packet
+class ChatMessagePacket final : public network::Packet
 {
 public:
     ChatMessagePacket() = default;
@@ -33,6 +33,6 @@ public:
     size_t Length() const override { return chat_message_.ByteSizeLong(); }
 
 private:
-    chat::packets::ChatMessage chat_message_{};
+    ChatMessage chat_message_{};
 };
 }
