@@ -10,7 +10,7 @@ TEST(MutableByteBuffer, Write)
     byte src[buffer_size]{};
     auto buffer = MutableByteBuffer(src, buffer_size);
 
-    const std::string_view sv("I am a string");
+    constexpr std::string_view sv("I am a string");
     buffer << 42 << sv << 125.12321f;
 
     i32 i1;

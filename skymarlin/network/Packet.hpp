@@ -27,26 +27,29 @@ public:
     virtual void Handle(std::shared_ptr<Session> session) = 0;
     virtual size_t Length() const = 0;
 
-    static void ReadHeader(byte* buffer, PacketLength& length, PacketType& type)
-    {
-        size_t pos{0};
-
-        length = utility::BitConverter::Convert<PacketLength>(buffer + pos);
-        pos += sizeof(PacketLength);
-
-        type = utility::BitConverter::Convert<PacketType>(buffer + pos);
-        pos += sizeof(PacketType);
-    }
-
-    static void WriteHeader(byte* buffer, const PacketLength length, const PacketType type)
-    {
-        size_t pos{0};
-
-        utility::BitConverter::Convert<PacketLength>(length, buffer + pos);
-        pos += sizeof(PacketLength);
-
-        utility::BitConverter::Convert<PacketType>(type, buffer + pos);
-        pos += sizeof(PacketType);
-    }
+    static void ReadHeader(byte* buffer, PacketLength& length, PacketType& type);
+    static void WriteHeader(byte* buffer, PacketLength length, PacketType type);
 };
+
+inline void Packet::ReadHeader(byte* buffer, PacketLength& length, PacketType& type)
+{
+    size_t pos{0};
+
+    length = utility::BitConverter::Convert<PacketLength>(buffer + pos);
+    pos += sizeof(PacketLength);
+
+    type = utility::BitConverter::Convert<PacketType>(buffer + pos);
+    // pos += sizeof(PacketType);
+}
+
+inline void Packet::WriteHeader(byte* buffer, const PacketLength length, const PacketType type)
+{
+    size_t pos{0};
+
+    utility::BitConverter::Convert<PacketLength>(length, buffer + pos);
+    pos += sizeof(PacketLength);
+
+    utility::BitConverter::Convert<PacketType>(type, buffer + pos);
+    // pos += sizeof(PacketType);
+}
 }

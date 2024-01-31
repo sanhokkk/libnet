@@ -6,17 +6,7 @@ project(
 )
 
 project_sources = [
-    ## network
-    'skymarlin/network/Connector.cpp',
-    'skymarlin/network/Listener.cpp',
-    'skymarlin/network/Server.cpp',
-    'skymarlin/network/Session.cpp',
-
-    ## utility
-    'skymarlin/utility/ConstByteBuffer.cpp',
-    'skymarlin/utility/MutableByteBuffer.cpp',
-
-    ## protocol
+    # protocol
     'skymarlin/protocol/chat/proto/ChatMessage.pb.cc',
 ]
 
@@ -27,6 +17,7 @@ project_tests = [
     'skymarlin/utility/BitConverter.test.cpp',
 
     # Functional/Integration Tests
+    'tests/network/Connection.cpp',
 ]
 
 build_args = [

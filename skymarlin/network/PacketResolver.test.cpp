@@ -4,7 +4,7 @@
 #include <skymarlin/network/Packet.hpp>
 #include <skymarlin/network/PacketResolver.hpp>
 
-namespace skymarlin::network
+namespace skymarlin::network::test
 {
 class TestPacket final : public Packet
 {
