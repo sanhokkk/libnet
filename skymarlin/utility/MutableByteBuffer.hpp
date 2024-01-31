@@ -1,9 +1,12 @@
 #pragma once
 
+#include <skymarlin/utility/BitConverter.hpp>
 #include <skymarlin/utility/ConstByteBuffer.hpp>
 
-namespace skymarlin::utility {
-class MutableByteBuffer : public ConstByteBuffer {
+namespace skymarlin::utility
+{
+class MutableByteBuffer : public ConstByteBuffer
+{
 public:
     explicit MutableByteBuffer(const boost::asio::mutable_buffer& buffer);
 
@@ -11,19 +14,15 @@ public:
 
     MutableByteBuffer(MutableByteBuffer&& x) noexcept;
 
-    void Clear();
+    void Clear() const;
 
-    template<NumericType T>
+    template <NumericType T>
     void Append(T value);
 
-    template<typename T>
-        requires std::same_as<T, std::string_view>
+    template <typename T> requires std::same_as<T, std::string_view>
     void Append(T value);
 
-    template<NumericType T>
-    void Put(T value, size_t pos);
-
-    byte* data() const;
+    byte* data() const { return data_; }
 
     byte& operator[](size_t pos) const;
 

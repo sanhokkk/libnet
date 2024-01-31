@@ -1,38 +1,31 @@
 #pragma once
 
 #include <string>
-#include <skymarlin/utility/TypeDefinitions.hpp>
+
 #include <boost/core/noncopyable.hpp>
 #include <boost/asio/buffer.hpp>
+#include <skymarlin/utility/BitConverter.hpp>
 
-namespace skymarlin::utility {
-template<typename T>
-concept NumericType = std::is_arithmetic_v<T>;
-
-class ConstByteBuffer : boost::noncopyable {
+namespace skymarlin::utility
+{
+class ConstByteBuffer : boost::noncopyable
+{
 public:
     ConstByteBuffer(byte* buffer, size_t size);
 
     ConstByteBuffer(ConstByteBuffer&& x) noexcept;
 
-    template<NumericType T>
+    template <NumericType T>
     T Read() const;
 
-    // TODO: Provide Read<std::string_view> <- How can I view byte array?
-    template<typename T>
-        requires std::same_as<T, std::string>
+    template <typename T> requires std::same_as<T, std::string>
     T Read() const;
-
-    template<NumericType T>
-    T Read(size_t pos) const;
-
-    void Read(byte* dest, size_t n) const;
 
     void Skip(size_t n) const;
 
-    const byte* data() const;
+    const byte* data() const { return data_; }
 
-    size_t size() const;
+    size_t size() const { return size_; }
 
     const byte& operator[](size_t pos) const;
 

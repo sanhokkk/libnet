@@ -4,16 +4,18 @@
 #include <skymarlin/network/packet/PacketResolver.hpp>
 #include <skymarlin/protocol/chat/ChatMessagePacket.hpp>
 
-namespace skymarlin::chat::packets {
+namespace skymarlin::protocol::chat {
 using network::PacketLength;
 using network::PacketType;
 using network::PacketCreator;
 
-enum class ChatPackets : PacketType {
-    ChatMessagePacketType = 0x01,
+enum class ChatPacketType : PacketType {
+    ChatMessagePacket = 0x01,
 };
 
-static const std::vector<std::pair<PacketType, PacketCreator>> CHAT_PACKET_CREATORS = {
-    {ChatPackets::ChatMessagePacketType, [] { return std::make_unique<ChatMessagePacket>(); }}
-};
+std::vector<std::pair<PacketType, PacketCreator>> GetChatPacketCreators() {
+    return std::vector {
+        {ChatPacketType::ChatMessagePacket, [] { return std::make_shared<ChatMessagePacket>(); },
+    }
+}
 }

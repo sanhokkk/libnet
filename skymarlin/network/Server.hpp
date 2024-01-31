@@ -3,16 +3,18 @@
 #include <skymarlin/network/Listener.hpp>
 #include <skymarlin/network/Session.hpp>
 
-namespace skymarlin::network {
-struct ServerConfig {
+namespace skymarlin::network
+{
+struct ServerConfig
+{
     short listen_port;
     // TODO: Read from config file
 };
 
-class Server : boost::noncopyable {
+class Server : boost::noncopyable
+{
 public:
     explicit Server(const ServerConfig& config);
-
     virtual ~Server() = default;
 
     void Run();

@@ -2,25 +2,29 @@
 
 #include <functional>
 #include <unordered_map>
+
 #include <skymarlin/network/Packet.hpp>
 
-namespace skymarlin::network {
-using PacketCreator = std::function<std::unique_ptr<Packet>()>;
+namespace skymarlin::network
+{
+using PacketCreator = std::function<std::shared_ptr<Packet>()>;
 
-class PacketResolver final {
+class PacketResolver final
+{
 public:
-    static void Init(const std::vector<std::pair<PacketType, PacketCreator>>& registers) {
-        for (const auto& [type, creator]: registers) {
+    static void Init(const std::vector<std::pair<PacketType, PacketCreator>>& registers)
+    {
+        for (const auto& [type, creator] : registers) {
             map_[type] = creator;
         }
     }
 
-    static bool TryResolve(const PacketType type, std::unique_ptr<Packet>& target) {
+    static std::shared_ptr<Packet> Resolve(const PacketType type)
+    {
         if (!map_.contains(type)) {
-            return false;
+            return nullptr;
         }
-        target = map_[type]();
-        return true;
+        return map_[type]();
     }
 
 private:

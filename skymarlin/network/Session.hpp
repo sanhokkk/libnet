@@ -8,10 +8,12 @@
 #include <skymarlin/utility/MutableByteBuffer.hpp>
 #include <skymarlin/thread/Queue.hpp>
 
-namespace skymarlin::network {
+namespace skymarlin::network
+{
 using boost::asio::ip::tcp;
 
-class Session : public std::enable_shared_from_this<Session>, boost::noncopyable {
+class Session : public std::enable_shared_from_this<Session>, boost::noncopyable
+{
 public:
     using SessionCreator = std::function<std::shared_ptr<Session>(tcp::socket&&)>;
 
@@ -19,7 +21,7 @@ public:
 
     virtual ~Session();
 
-    inline static SessionCreator Create {};
+    inline static SessionCreator Create{};
 
     void Run();
 

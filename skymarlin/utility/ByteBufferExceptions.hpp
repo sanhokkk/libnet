@@ -18,7 +18,7 @@ private:
 
 class ByteBufferPositionException final : public ByteBufferException {
 public:
-    ByteBufferPositionException(bool read, size_t pos, size_t value_size, size_t buffer_size) {
+    ByteBufferPositionException(const bool read, const size_t pos, const size_t value_size, const size_t buffer_size) {
         std::ostringstream ss;
 
         //TODO: Use std::format
@@ -33,10 +33,10 @@ public:
 
 class ByteBufferInvalidValueException final : public ByteBufferException {
 public:
-    ByteBufferInvalidValueException(const std::string& value, const std::string& value_type) {
+    ByteBufferInvalidValueException(const bool read, const std::string_view value, const std::string_view value_type) {
         std::ostringstream ss;
 
-        ss << "Invalid " << value_type << ": " << value << " in ByteBuffer";
+        ss << "Invalid " << (read ? "read" : "write") << " on " << value_type << ": " << value << " in ByteBuffer";
 
         message().assign(ss.str());
     }

@@ -1,24 +1,28 @@
 #pragma once
 
 #include <skymarlin/network/packet/Packet.hpp>
-#include <skymarlin/protocol/chat/ChatMessage.pb.h>
+#include <skymarlin/protocol/chat/proto/ChatMessage.pb.h>
 
 namespace skymarlin::protocol::chat {
-class ChatMessagePacket final : public network::packet::Packet {
+class ChatMessagePacket final : public network::packet::Packet
+{
 public:
     ChatMessagePacket() = default;
 
-    ChatMessagePacket(const u32 client_id, std::string_view message) {
+    ChatMessagePacket(const u32 client_id, std::string_view message)
+    {
         chat_message_.set_client_id(client_id);
         chat_message_.set_message(message);
     }
 
-    void Serialize(boost::asio::mutable_buffer& buffer) const override {
+    void Serialize(boost::asio::mutable_buffer& buffer) const override
+    {
         // Packet::WriteHeader(buffer.data(), )
         // if (!chat_message_.SerializeToArray())
     }
 
-    void Deserialize(const boost::asio::mutable_buffer& buffer) override {
+    void Deserialize(const boost::asio::mutable_buffer& buffer) override
+    {
         if (!chat_message_.ParseFromArray(buffer.data(), buffer.size())) {
             //TODO: Error
         }

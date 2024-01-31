@@ -1,9 +1,13 @@
 #include <gtest/gtest.h>
-#include <skymarlin/network/PacketResolver.hpp>
-#include <skymarlin/network/Packet.hpp>
 
-namespace skymarlin::network {
-class TestPacket : public Packet {
+#include <boost/asio.hpp>
+#include <skymarlin/network/Packet.hpp>
+#include <skymarlin/network/PacketResolver.hpp>
+
+namespace skymarlin::network
+{
+class TestPacket final : public Packet
+{
 public:
     void Serialize(boost::asio::mutable_buffer& buffer) const override {};
 
@@ -16,21 +20,15 @@ public:
     static constexpr PacketType Type = 0x11;
 };
 
-TEST(PacketResolver, Register) {
-    std::vector<std::pair<PacketType, PacketCreator>> creators = {
-        {TestPacket::Type, [] { return std::make_unique<TestPacket>(); }}
+TEST(PacketResolver, Register)
+{
+    const std::vector<std::pair<PacketType, PacketCreator>> creators = {
+        {TestPacket::Type, [] { return std::make_unique<TestPacket>(); }},
     };
     PacketResolver::Init(creators);
 
-    std::unique_ptr<TestPacket> test_packet;
-    if (!PacketResolver::TryResolve(TestPacket::Type, test_packet)) {
+    if (const auto test_packet = PacketResolver::Resolve(TestPacket::Type); !test_packet) {
         FAIL();
     }
 }
 }
-
-
-/*int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}*/
