@@ -83,7 +83,8 @@ T ConstByteBuffer::Read() const
 template <typename T> requires std::same_as<T, std::string>
 T ConstByteBuffer::Read() const
 {
-    const size_t length = Read<u16>();
+    //TODO: Get StringHeader via BitConverter
+    const size_t length = Read<StringLengthType>();
     if (rpos_ + length > size_) {
         throw ByteBufferInvalidValueException(true, std::to_string(length), "string length");
     }

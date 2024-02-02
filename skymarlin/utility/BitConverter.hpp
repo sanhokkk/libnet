@@ -20,31 +20,39 @@ public:
         UTF_16,
     };
 
-    /**
-     * \brief Convert byte buffer to a value of type T
-     */
     template <NumericType T>
-    [[nodiscard]] static T Convert(byte* buffer)
+    [[nodiscard]] static T Convert(byte* src)
     {
-        AlignEndianess(buffer, sizeof(T));
+        AlignEndianess(src, sizeof(T));
 
         T value{};
-        std::memcpy(&value, buffer, sizeof(T));
+        std::memcpy(&value, src, sizeof(T));
         return value;
     }
 
-    /**
-     * \brief Convert a value of type T into byte buffer
-     */
-    template <NumericType T>
-    static void Convert(const T value, byte* buffer)
+    template <typename T> requires std::is_same_v<T, std::string>
+    [[nodiscard]] static T Convert(byte* src)
     {
-        /*constexpr T mask = static_cast<T>(0b1111'1111);
-        for (size_t i{0}; i < sizeof(T); ++i) {
-            buffer[i] = static_cast<byte>((value >> i * 8) & mask);
-        }*/
-        std::memcpy(buffer, &value, sizeof(T));
-        AlignEndianess(buffer, sizeof(T));
+        AlignEndianess(src, sizeof(T));
+
+        T value{};
+        std::memcpy(&value, src, sizeof(T));
+        return value;
+    }
+
+    template <NumericType T>
+    static void Convert(const T value, byte* dest)
+    {
+        std::memcpy(dest, &value, sizeof(T));
+        AlignEndianess(dest, sizeof(T));
+    }
+
+
+
+    //TODO: Character encoding
+    static size_t GetStringBytesSize(std::string_view s)
+    {
+        return s.size() + sizeof(STRING_HEADER_SIZE);
     }
 
 private:

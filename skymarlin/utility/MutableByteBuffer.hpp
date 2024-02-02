@@ -92,6 +92,7 @@ void MutableByteBuffer::Append(const T value)
 template <typename T> requires std::same_as<T, std::string_view>
 void MutableByteBuffer::Append(const T value)
 {
+    //TODO: Convert via BitConverter
     const size_t length = value.length();
     if (wpos_ + length > size_ || length > std::numeric_limits<u16>::max()) {
         throw ByteBufferInvalidValueException(false, std::to_string(length), "string length");

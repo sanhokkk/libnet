@@ -15,9 +15,13 @@ public:
 
     void Connect();
 
-    void OnConnect(const tcp::endpoint& endpoint);
+    bool connected() const { return connected_; }
 
 private:
+    void OnConnect(const tcp::endpoint& endpoint);
+
+    bool connected_{false};
+
     tcp::socket socket_;
     tcp::resolver resolver_;
     tcp::endpoint peer_endpoint_;
@@ -43,6 +47,7 @@ inline void Connector::Connect()
 
 inline void Connector::OnConnect(const tcp::endpoint& endpoint)
 {
+    connected_ = true;
     std::cout << "Connected to " << endpoint.address() << std::endl;
 }
 }

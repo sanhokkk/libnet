@@ -18,14 +18,12 @@ class Session;
 class Packet : boost::noncopyable
 {
 public:
-    Packet() = default;
-
     virtual ~Packet() = default;
 
     virtual void Serialize(boost::asio::mutable_buffer& buffer) const = 0;
     virtual void Deserialize(const boost::asio::mutable_buffer& buffer) = 0;
     virtual void Handle(std::shared_ptr<Session> session) = 0;
-    virtual size_t Length() const = 0;
+    virtual size_t length() const = 0;
 
     static void ReadHeader(byte* buffer, PacketLength& length, PacketType& type);
     static void WriteHeader(byte* buffer, PacketLength length, PacketType type);
@@ -52,4 +50,5 @@ inline void Packet::WriteHeader(byte* buffer, const PacketLength length, const P
     utility::BitConverter::Convert<PacketType>(type, buffer + pos);
     // pos += sizeof(PacketType);
 }
+
 }

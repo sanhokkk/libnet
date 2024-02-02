@@ -15,7 +15,7 @@ public:
 
     void Handle(std::shared_ptr<skymarlin::network::Session> session) override {}
 
-    size_t Length() const override { return 0; };
+    size_t length() const override { return 0; };
 
     static constexpr PacketType Type = 0x11;
 };

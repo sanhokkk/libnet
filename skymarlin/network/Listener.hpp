@@ -12,19 +12,15 @@ using boost::asio::ip::tcp;
 class Listener : boost::noncopyable
 {
 public:
-    Listener() = delete;
-
     Listener(boost::asio::io_context& io_context, short port);
+    virtual ~Listener() = default;
 
-    virtual ~Listener();
-
-    void Run();
-
-protected:
-    virtual void OnAccept(tcp::socket&& socket) = 0;
+    void Start();
+    void Stop();
 
 private:
     void Accept();
+    virtual void OnAccept(tcp::socket&& socket) = 0;
 
     tcp::acceptor acceptor_;
 };
@@ -32,11 +28,23 @@ private:
 inline Listener::Listener(boost::asio::io_context& io_context, const short port)
     : acceptor_(io_context, tcp::endpoint(tcp::v6(), port)) {}
 
-inline void Listener::Run()
+
+inline void Listener::Start()
 {
     std::cout << "Start accepting on: " << acceptor_.local_endpoint() << std::endl;
     Accept();
 }
+
+inline void Listener::Stop()
+{
+    try {
+        acceptor_.close();
+    }
+    catch (const boost::system::system_error& e) {
+        std::cout << "Error closing listener: " << e.what() << std::endl;
+    }
+}
+
 
 inline void Listener::Accept()
 {
@@ -47,7 +55,6 @@ inline void Listener::Accept()
         else {
             //TODO: Use format
             std::cout << socket.remote_endpoint() << " connecting to " << socket.local_endpoint() << std::endl;
-
             OnAccept(std::move(socket));
         }
 

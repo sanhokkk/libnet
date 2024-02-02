@@ -17,7 +17,7 @@ project_tests = [
     'skymarlin/utility/BitConverter.test.cpp',
 
     # Functional/Integration Tests
-    'tests/network/Connection.cpp',
+    'tests/network/Networking.cpp',
 ]
 
 build_args = [
