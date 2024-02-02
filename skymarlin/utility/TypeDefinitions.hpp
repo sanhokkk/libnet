@@ -14,7 +14,4 @@ using u32 = uint32_t;
 using u64 = uint64_t;
 using f32 = float;
 using f64 = double;
-
-using StringLengthType = u16;
-constexpr static size_t STRING_HEADER_SIZE = sizeof(StringLengthType);
 }

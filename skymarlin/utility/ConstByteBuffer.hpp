@@ -85,7 +85,7 @@ T ConstByteBuffer::Read() const
 {
     //TODO: Get StringHeader via BitConverter
     const size_t length = Read<StringLengthType>();
-    if (rpos_ + length > size_) {
+    if (rpos_ + sizeof(STRING_HEADER_SIZE) + length > size_ || length > std::numeric_limits<StringLengthType>::max()) {
         throw ByteBufferInvalidValueException(true, std::to_string(length), "string length");
     }
 

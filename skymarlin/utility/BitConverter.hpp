@@ -8,6 +8,9 @@
 
 namespace skymarlin::utility
 {
+using StringLengthType = u16;
+constexpr static size_t STRING_HEADER_SIZE = sizeof(StringLengthType);
+
 template <typename T>
 concept NumericType = std::is_arithmetic_v<T>;
 
@@ -23,20 +26,28 @@ public:
     template <NumericType T>
     [[nodiscard]] static T Convert(byte* src)
     {
-        AlignEndianess(src, sizeof(T));
+        AlignEndianness(src, sizeof(T));
 
-        T value{};
+        T value {};
         std::memcpy(&value, src, sizeof(T));
         return value;
     }
 
-    template <typename T> requires std::is_same_v<T, std::string>
+    template <typename T> requires std::same_as<T, std::string>
     [[nodiscard]] static T Convert(byte* src)
     {
-        AlignEndianess(src, sizeof(T));
+        std::string value {};
+        size_t pos {0};
 
-        T value{};
-        std::memcpy(&value, src, sizeof(T));
+        const auto length = Convert<StringLengthType>(src);
+        pos += sizeof(StringLengthType);
+
+        while (pos < sizeof(StringLengthType) + length) {
+            //TODO: Character encoding
+            value += Convert<char>(src);
+            pos += sizeof(char);
+        }
+
         return value;
     }
 
@@ -44,19 +55,27 @@ public:
     static void Convert(const T value, byte* dest)
     {
         std::memcpy(dest, &value, sizeof(T));
-        AlignEndianess(dest, sizeof(T));
+        AlignEndianness(dest, sizeof(T));
     }
 
-
-
-    //TODO: Character encoding
-    static size_t GetStringBytesSize(std::string_view s)
+    template <typename T> requires std::same_as<T, std::string_view>
+    static void Convert(const T value, byte* dest)
     {
-        return s.size() + sizeof(STRING_HEADER_SIZE);
+        size_t pos {0};
+
+        const auto length = value.length();
+        Convert<StringLengthType>(length, dest + pos);
+        pos += sizeof(StringLengthType);
+
+        //TODO: Character encoding
+        for (const char c : value) {
+            Convert(c, dest + pos);
+            pos += sizeof(char);
+        }
     }
 
 private:
-    static void AlignEndianess(byte* src, const size_t n)
+    static void AlignEndianness(byte* src, const size_t n)
     {
         if constexpr (std::endian::native == std::endian::little) {
             return;

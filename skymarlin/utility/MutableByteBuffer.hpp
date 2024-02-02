@@ -94,7 +94,7 @@ void MutableByteBuffer::Append(const T value)
 {
     //TODO: Convert via BitConverter
     const size_t length = value.length();
-    if (wpos_ + length > size_ || length > std::numeric_limits<u16>::max()) {
+    if (wpos_ + sizeof(STRING_HEADER_SIZE) + length > size_ || length > std::numeric_limits<StringLengthType>::max()) {
         throw ByteBufferInvalidValueException(false, std::to_string(length), "string length");
     }
     Append<u16>(length);
