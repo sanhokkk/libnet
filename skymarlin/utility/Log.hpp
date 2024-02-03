@@ -1,44 +1,56 @@
 #pragma once
 
-#include <format>
-#include <iostream>
-#include <string_view>
+#include <spdlog/spdlog.h>
 
 namespace skymarlin::utility
 {
-using std::literals::operator ""sv;
+#define SKYMARLIN_LOG_INFO(format, ...) \
+    spdlog::info(format __VA_OPT__(,) __VA_ARGS__)
 
-class Log final
+#define SKYMARLIN_LOG_ERROR(format, ...) \
+    spdlog::error(format __VA_OPT__(,) __VA_ARGS__)
+
+#define SKYMARLIN_LOG_WARN(format, ...) \
+    spdlog::warn(format __VA_OPT__(,) __VA_ARGS__)
+
+#define SKYMARLIN_LOG_CRITICAL(format, ...) \
+    spdlog::critical(format __VA_OPT__(,) __VA_ARGS__)
+
+#define SKYMARLIN_LOG_DEBUG(format, ...) \
+    spdlog::debug(format __VA_OPT__(,) __VA_ARGS__)
+
+//TODO: `format_string` cannot be passed; it should be a constant expression.
+/*class Log final
 {
 public:
     template <typename... Args>
-    static void Info(std::string_view format, Args... args)
+    static void Info(std::string_view format_string, Args... args)
     {
-        std::cout << std::format(format, args...) << std::endl;
+        spdlog::info(format_string, args...);
     }
 
     template <typename... Args>
-    static void Error(std::string_view format, Args... args)
+    static void Error(constexpr std::string_view format_string, Args... args)
     {
-        std::cout << std::format(format, args...) << std::endl;
+        spdlog::error(format_string, args...);
     }
 
     template <typename... Args>
-    static void Warn(std::string_view format, Args... args)
+    static void Warn(constexpr std::string_view format_string, Args... args)
     {
-        std::cout << std::format(format, args...) << std::endl;
+        spdlog::warn(format_string, args...);
     }
 
     template <typename... Args>
-    static void Critical(std::string_view format, Args... args)
+    static void Critical(constexpr std::string_view format_string, Args... args)
     {
-        std::cout << std::format(format, args...) << std::endl;
+        spdlog::critical(format_string, args...);
     }
 
     template <typename... Args>
-    static void Debug(std::string_view format, Args... args)
+    static void Debug(constexpr std::string_view format_string, Args... args)
     {
-        std::cout << std::format(format, args...) << std::endl;
+        spdlog::debug(format_string, args...);
     }
-};
+};*/
 }

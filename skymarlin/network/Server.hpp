@@ -1,7 +1,5 @@
 #pragma once
 
-#include <future>
-
 #include <skymarlin/network/Listener.hpp>
 #include <skymarlin/utility/Log.hpp>
 
@@ -41,7 +39,7 @@ inline std::thread Server::Start()
     Init();
 
     if (!listener_) {
-        std::cout << "listener is not initialized" << std::endl;
+        SKYMARLIN_LOG_CRITICAL("Listener is not initialized");
         exit(1);
     }
 
@@ -52,7 +50,7 @@ inline std::thread Server::Start()
         while (running_) {
             io_context_.run();
         }
-        std::cout << "IO thread terminating" << std::endl;
+        SKYMARLIN_LOG_INFO("IO thread terminating");
     });
 
     return io_thread;
@@ -60,7 +58,7 @@ inline std::thread Server::Start()
 
 inline void Server::Stop()
 {
-    std::cout << "Stopping the server..." << std::endl;
+    SKYMARLIN_LOG_INFO("Stopping the server...");
     running_ = false;
 
     listener_->Stop();

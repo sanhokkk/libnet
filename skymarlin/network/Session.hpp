@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <memory>
 
 #include <boost/asio.hpp>
@@ -9,6 +8,7 @@
 #include <skymarlin/network/PacketResolver.hpp>
 #include <skymarlin/thread/Queue.hpp>
 #include <skymarlin/utility/ByteBufferExceptions.hpp>
+#include <skymarlin/utility/Log.hpp>
 #include <skymarlin/utility/MutableByteBuffer.hpp>
 
 namespace skymarlin::network
@@ -45,23 +45,23 @@ private:
     tcp::socket socket_;
     boost::asio::streambuf read_streambuf_;
     boost::asio::streambuf write_streambuf_;
-    byte header_buffer_source_[PACKET_HEADER_SIZE]{};
+    byte header_buffer_source_[PACKET_HEADER_SIZE] {};
     utility::ConstByteBuffer header_buffer_;
 
     thread::ConcurrentQueue<boost::asio::const_buffer> write_queue_;
-    std::atomic<bool> writing_{false};
+    std::atomic<bool> writing_ {false};
 
     std::atomic<bool> closed_, closing_;
 };
 
 inline Session::Session(tcp::socket&& socket)
     : socket_(std::move(socket)), header_buffer_(header_buffer_source_, PACKET_HEADER_SIZE),
-      closed_(false), closing_(false)
+    closed_(false), closing_(false)
 {
     boost::system::error_code ec;
     socket_.set_option(tcp::no_delay(true), ec);
     if (ec) {
-        std::cout << "Error setting socket no-delay: " << ec.what() << std::endl;
+        SKYMARLIN_LOG_ERROR("Error setting socket no-delay: {}", ec.what());
     }
 }
 
@@ -73,7 +73,7 @@ inline Session::~Session()
     boost::system::error_code ec;
     socket_.close(ec);
     if (ec) {
-        std::cout << "Error closing socket: " << ec.what() << std::endl;
+        SKYMARLIN_LOG_ERROR("Error closing socket: {}", ec.what());
     }
 }
 
@@ -90,7 +90,7 @@ inline void Session::Close()
     boost::system::error_code ec;
     socket_.shutdown(tcp::socket::shutdown_send, ec);
     if (ec) {
-        std::cout << "Error shutting down socket: " << ec.what() << std::endl;
+        SKYMARLIN_LOG_ERROR("Error shutting down socket: {}", ec.what());
     }
 
     OnClose();
@@ -110,15 +110,15 @@ inline void Session::ReadHeader()
         boost::asio::buffer(header_buffer_source_),
         boost::asio::transfer_exactly(PACKET_HEADER_SIZE),
         [self = shared_from_this()](const boost::system::error_code& ec,
-        const size_t bytes_transferred) {
+        const size_t bytes_transferred)
+        {
             if (ec) {
-                std::cout << "Error reading packet header: " << ec.message() << std::endl;
+                SKYMARLIN_LOG_ERROR("Error reading packet header: {}", ec.what());
                 self->Close();
                 return;
             }
             if (bytes_transferred == 0) {
-                std::cout << "Error reading packet header: zero bytes read for packet header" <<
-                    std::endl;
+                SKYMARLIN_LOG_ERROR("Error reading packet header: zero bytes read for packet header");
                 self->Close();
                 return;
             }
@@ -135,12 +135,12 @@ inline void Session::OnReadHeader()
         header_buffer_ >> packet_length >> packet_type;
     }
     catch (const utility::ByteBufferException& e) {
-        std::cout << "Error reading bytes on header: " << e.what() << std::endl;
+        SKYMARLIN_LOG_ERROR("Error reading bytes on header: {}", e.what());
         Close();
         return;
     }
     catch (const std::exception& e) {
-        std::cout << e.what() << std::endl;
+        SKYMARLIN_LOG_ERROR(e.what());
         Close();
         return;
     }
@@ -150,11 +150,11 @@ inline void Session::OnReadHeader()
         buffer = std::make_shared<boost::asio::mutable_buffer>(read_streambuf_.prepare(packet_length));
     }
     catch (const std::length_error& e) {
-        std::cout << "Insuffcient buffer size to prepare: " << e.what() << std::endl;
+        SKYMARLIN_LOG_ERROR("Insuffcient buffer size to prepare for packet body: {}", e.what());
         Close();
         return;
     } catch (const std::exception& e) {
-        std::cout << e.what() << std::endl;
+        SKYMARLIN_LOG_ERROR(e.what());
         Close();
         return;
     }
@@ -163,17 +163,16 @@ inline void Session::OnReadHeader()
         *buffer,
         boost::asio::transfer_exactly(packet_length),
         [self = shared_from_this(), packet_length, packet_type, buffer](
-        const boost::system::error_code& ec, const size_t bytes_transferred) {
+        const boost::system::error_code& ec, const size_t bytes_transferred)
+        {
             if (ec) {
-                std::cout << "Error reading packet body: " << ec.message() << std::endl;
+                SKYMARLIN_LOG_ERROR("Error reading packet body: : {}", ec.message());
                 self->Close();
                 return;
             }
             if (bytes_transferred != packet_length) {
-                std::cout <<
-                    "Error reading packet body: Inconsistent bytes between read bytes and packet length"
-                    <<
-                    std::endl;
+                SKYMARLIN_LOG_ERROR(
+                    "Error reading packet body: Inconsistent bytes between read bytes and packet length");
                 self->Close();
                 return;
             }
@@ -189,7 +188,7 @@ inline void Session::OnReadPacket(const PacketType packet_type, const boost::asi
 {
     const std::shared_ptr<Packet> packet = PacketResolver::Resolve(packet_type);
     if (!packet) {
-        std::cout << "Invalid packet type: " << packet_type << std::endl;
+        SKYMARLIN_LOG_ERROR("Invalid packet type: {}", packet_type);
         Close();
         return;
     }
@@ -209,16 +208,15 @@ inline void Session::Write(boost::asio::const_buffer& buffer)
     while (!write_queue_.Empty()) {
         boost::asio::async_write(socket_, write_queue_.Pop(),
             [self = shared_from_this()](const boost::system::error_code& ec,
-            const size_t bytes_transferred) {
+            const size_t bytes_transferred)
+            {
                 if (ec) {
-                    std::cout << "Error writing packet header: " << ec.message() << std::endl;
+                    SKYMARLIN_LOG_ERROR("Error writing packet header: {}", ec.message());
                     self->Close();
                     return;
                 }
                 if (bytes_transferred == 0) {
-                    std::cout <<
-                        "Error writing packet header: zero bytes written for packet header" <<
-                        std::endl;
+                    SKYMARLIN_LOG_ERROR("Error writing packet header: zero bytes written for packet header");
                     self->Close();
                     return;
                 }

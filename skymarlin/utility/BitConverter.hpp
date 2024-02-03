@@ -24,7 +24,7 @@ public:
     };
 
     template <NumericType T>
-    [[nodiscard]] static T Convert(byte* src)
+    static T Convert(byte* src)
     {
         AlignEndianness(src, sizeof(T));
 
@@ -34,7 +34,7 @@ public:
     }
 
     template <typename T> requires std::same_as<T, std::string>
-    [[nodiscard]] static T Convert(byte* src)
+    static T Convert(byte* src)
     {
         std::string value {};
         size_t pos {0};

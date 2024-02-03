@@ -30,6 +30,7 @@ build_args = [
 
 protobuf_dep = dependency('protobuf')
 absl_base_dep = dependency('absl_base')
+spdlog_dep = dependency('spdlog')
 libthread_dep = dependency('libthread', fallback : ['libthread', 'libthread_dep'])
 
 project_dependencies = [
@@ -37,12 +38,14 @@ project_dependencies = [
     libthread_dep,
     protobuf_dep,
     absl_base_dep,
+    spdlog_dep
 ]
 
 public_dependencies = [
     libthread_dep,
     protobuf_dep,
     absl_base_dep,
+    spdlog_dep
 ]
 
 inc = include_directories('.')

@@ -1,9 +1,8 @@
 #pragma once
 
-#include <iostream>
-
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
+#include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::network
 {
@@ -31,7 +30,8 @@ inline Listener::Listener(boost::asio::io_context& io_context, const short port)
 
 inline void Listener::Start()
 {
-    std::cout << "Start accepting on: " << acceptor_.local_endpoint() << std::endl;
+    SKYMARLIN_LOG_INFO("Start accepting on {}", acceptor_.local_endpoint().address().to_string());
+
     Accept();
 }
 
@@ -41,7 +41,7 @@ inline void Listener::Stop()
         acceptor_.close();
     }
     catch (const boost::system::system_error& e) {
-        std::cout << "Error closing listener: " << e.what() << std::endl;
+        SKYMARLIN_LOG_ERROR("Error closing listener: {}", e.what());
     }
 }
 
@@ -50,11 +50,11 @@ inline void Listener::Accept()
 {
     acceptor_.async_accept([this](const boost::system::error_code& ec, tcp::socket socket) {
         if (ec) {
-            std::cout << "Error accepting socket: " << ec.message() << std::endl;
+            SKYMARLIN_LOG_ERROR("Error accepting socket: {}", ec.message());
         }
         else {
-            //TODO: Use format
-            std::cout << socket.remote_endpoint() << " connecting to " << socket.local_endpoint() << std::endl;
+            SKYMARLIN_LOG_INFO("Accepted from {}", socket.remote_endpoint().address().to_string());
+
             OnAccept(std::move(socket));
         }
 

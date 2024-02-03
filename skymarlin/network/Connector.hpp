@@ -1,10 +1,9 @@
 #pragma once
 
-#include <iostream>
-
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
 #include <skymarlin/network/Session.hpp>
+#include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::network
 {
@@ -37,7 +36,7 @@ inline void Connector::Connect()
         resolver_.resolve("::", "33333"),
         [this](const boost::system::error_code& ec, const tcp::endpoint& endpoint) {
             if (ec) {
-                std::cout << "Error connect: " << ec.what() << std::endl;
+                SKYMARLIN_LOG_ERROR("Error connecting: {}", ec.what());
                 return;
             }
 
@@ -48,6 +47,7 @@ inline void Connector::Connect()
 inline void Connector::OnConnect(const tcp::endpoint& endpoint)
 {
     connected_ = true;
-    std::cout << "Connected to " << endpoint.address() << std::endl;
+
+    SKYMARLIN_LOG_INFO("Connected to ", endpoint.address().to_string());
 }
 }
