@@ -55,28 +55,30 @@ private:
 class TestPacket final : public Packet
 {
 public:
-    enum class Action : u8
+    enum class Action : byte
     {
         GREET,
         CLOSE
     };
 
-    TestPacket(const u32 user_id, const u8 action, const f64 dummy)
-        : user_id_(user_id), action_(action), dummy_(dummy) {}
+    /*TestPacket(const u32 user_id, const Action action, const f64 dummy)
+        :user_id_(user_id), action_(action), dummy_(dummy) {}*/
 
     void Serialize(boost::asio::mutable_buffer& buffer) const override
     {
         auto bytebuffer = utility::MutableByteBuffer(buffer);
-        bytebuffer << user_id_ << action_ << dummy_;
+        // bytebuffer << user_id_ << action_ << dummy_;
     };
 
     void Deserialize(const boost::asio::mutable_buffer& buffer) override
     {
         const auto bytebuffer = utility::ConstByteBuffer(boost::asio::buffer_cast<byte*>(buffer), buffer.size());
-        bytebuffer >> user_id_ >> action_ >> dummy_;
+            // bytebuffer >> user_id_ >> action_ >> dummy_;
     };
 
-    void Handle(std::shared_ptr<Session> session) override {}
+    void Handle(std::shared_ptr<Session> session) override
+    {
+    }
 
     size_t length() const override
     {
@@ -87,7 +89,7 @@ public:
 
 private:
     u32 user_id_ {};
-    u8 action_ {};
+    Action action_ {};
     f64 dummy_ {};
 };
 

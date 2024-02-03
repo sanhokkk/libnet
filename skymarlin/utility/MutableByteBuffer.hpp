@@ -114,7 +114,7 @@ inline byte& MutableByteBuffer::operator[](const size_t pos) const
 
 inline MutableByteBuffer& MutableByteBuffer::operator<<(const bool value)
 {
-    Append<byte>(value > 0);
+    Append<byte>(value ? 1 : 0);
     return *this;
 }
 

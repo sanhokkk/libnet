@@ -3,6 +3,7 @@
 #include <future>
 
 #include <skymarlin/network/Listener.hpp>
+#include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::network
 {
