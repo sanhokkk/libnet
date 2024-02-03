@@ -22,4 +22,25 @@ TEST(MutableByteBuffer, Write)
     ASSERT_EQ(sv, s);
     ASSERT_EQ(125.12321f, f1);
 }
+
+TEST(MutableByteBuffer, InvalidStringSize)
+{
+    constexpr size_t buffer_size = 16;
+    byte src[buffer_size]{};
+    auto buffer = MutableByteBuffer(src, buffer_size);
+
+    try {
+        std::string s {};
+        for (int i = 0; i < buffer_size + 10; ++i) {
+            s += "k";
+        }
+
+        buffer << s;
+
+        FAIL(); // Should have thrown error
+    } catch (const ByteBufferInvalidValueException& e) {
+        std::cout << e.what() << std::endl;
+        return;
+    }
+}
 }

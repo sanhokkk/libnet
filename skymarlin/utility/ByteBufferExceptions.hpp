@@ -1,9 +1,13 @@
 #pragma once
 
-#include <sstream>
+#include <format>
 
-namespace skymarlin::utility {
-class ByteBufferException : public std::exception {
+namespace skymarlin::utility
+{
+using namespace std::literals::string_view_literals;
+
+class ByteBufferException : public std::exception
+{
 public:
     ~ByteBufferException() override = default;
 
@@ -16,29 +20,34 @@ private:
     std::string message_;
 };
 
-class ByteBufferPositionException final : public ByteBufferException {
+class ByteBufferPositionException final : public ByteBufferException
+{
 public:
-    ByteBufferPositionException(const bool read, const size_t pos, const size_t value_size, const size_t buffer_size) {
-        std::ostringstream ss;
-
-        //TODO: Use std::format
-        ss << "Attempted to " << (read ? "read " : "write ") << value_size << " bytes in ByteBuffer (pos: " << pos <<
-                " size: " << buffer_size << " bytes )";
-
-        message().assign(ss.str());
+    ByteBufferPositionException(const bool read, const size_t pos, const size_t value_size,
+        const size_t buffer_size)
+    {
+        message().assign(
+            std::format("Attempted to {} {} bytes in ByteBuffer; pos: {}, size: {}"sv,
+                (read ? "read"sv : "write"sv),
+                value_size,
+                pos,
+                buffer_size));
     }
 
     ~ByteBufferPositionException() override = default;
 };
 
-class ByteBufferInvalidValueException final : public ByteBufferException {
+class ByteBufferInvalidValueException final : public ByteBufferException
+{
 public:
-    ByteBufferInvalidValueException(const bool read, const std::string_view value, const std::string_view value_type) {
-        std::ostringstream ss;
-
-        ss << "Invalid " << (read ? "read" : "write") << " on " << value_type << ": " << value << " in ByteBuffer";
-
-        message().assign(ss.str());
+    ByteBufferInvalidValueException(const bool read, const std::string_view value,
+        const std::string_view value_type)
+    {
+        message().assign(
+            std::format("Invalid {} of ({}){} on ByteBuffer"sv,
+                (read ? "read"sv : "write"sv),
+                value_type,
+                value));
     }
 };
 };
