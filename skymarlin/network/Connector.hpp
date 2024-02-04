@@ -13,13 +13,15 @@ public:
     explicit Connector(boost::asio::io_context& io_context);
 
     void Connect();
+    void Disconnect();
 
     bool connected() const { return connected_; }
 
 private:
     void OnConnect(const tcp::endpoint& endpoint);
+    // void OnDisconnect();
 
-    bool connected_{false};
+    std::atomic<bool> connected_{false};
 
     tcp::socket socket_;
     tcp::resolver resolver_;
@@ -44,10 +46,23 @@ inline void Connector::Connect()
         });
 }
 
+inline void Connector::Disconnect()
+{
+    try {
+        SKYMARLIN_LOG_INFO("Disconnecting from {}:{}", socket_.remote_endpoint().address().to_string(), socket_.remote_endpoint().port());
+        socket_.close();
+    }
+    catch (const boost::system::system_error &e) {
+        SKYMARLIN_LOG_ERROR("Error closing socket: {}", e.what());
+    }
+    connected_ = false;
+}
+
+
 inline void Connector::OnConnect(const tcp::endpoint& endpoint)
 {
     connected_ = true;
 
-    SKYMARLIN_LOG_INFO("Connected to ", endpoint.address().to_string());
+    SKYMARLIN_LOG_INFO("Connected to {}:{}", endpoint.address().to_string(), endpoint.port());
 }
 }

@@ -21,6 +21,8 @@ public:
     std::thread Start();
     void Stop();
 
+    bool running() const { return running_; }
+
 protected:
     const ServerConfig config_;
     boost::asio::io_context io_context_ {};
@@ -37,15 +39,12 @@ inline Server::Server(const ServerConfig config)
 inline std::thread Server::Start()
 {
     Init();
-
     if (!listener_) {
         SKYMARLIN_LOG_CRITICAL("Listener is not initialized");
         exit(1);
     }
 
     listener_->Start();
-    running_ = true;
-
     std::thread io_thread([this] {
         while (running_) {
             io_context_.run();
@@ -53,6 +52,7 @@ inline std::thread Server::Start()
         SKYMARLIN_LOG_INFO("IO thread terminating");
     });
 
+    running_ = true;
     return io_thread;
 }
 

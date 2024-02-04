@@ -30,7 +30,7 @@ inline Listener::Listener(boost::asio::io_context& io_context, const short port)
 
 inline void Listener::Start()
 {
-    SKYMARLIN_LOG_INFO("Start accepting on {}", acceptor_.local_endpoint().address().to_string());
+    SKYMARLIN_LOG_INFO("Start accepting on {}:{}", acceptor_.local_endpoint().address().to_string(), acceptor_.local_endpoint().port());
 
     Accept();
 }
@@ -53,7 +53,7 @@ inline void Listener::Accept()
             SKYMARLIN_LOG_ERROR("Error accepting socket: {}", ec.message());
         }
         else {
-            SKYMARLIN_LOG_INFO("Accepted from {}", socket.remote_endpoint().address().to_string());
+            SKYMARLIN_LOG_INFO("Accepted from {}:{}", socket.remote_endpoint().address().to_string(), socket.remote_endpoint().port());
 
             OnAccept(std::move(socket));
         }

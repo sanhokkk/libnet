@@ -73,12 +73,10 @@ public:
     void Deserialize(const boost::asio::mutable_buffer& buffer) override
     {
         const auto bytebuffer = utility::ConstByteBuffer(boost::asio::buffer_cast<byte*>(buffer), buffer.size());
-            // bytebuffer >> user_id_ >> action_ >> dummy_;
+        // bytebuffer >> user_id_ >> action_ >> dummy_;
     };
 
-    void Handle(std::shared_ptr<Session> session) override
-    {
-    }
+    void Handle(std::shared_ptr<Session> session) override {}
 
     size_t length() const override
     {
@@ -95,7 +93,8 @@ private:
 
 TEST(Networking, LaunchServer)
 {
-    auto make_config = [] {
+    auto make_config = []
+    {
         return network::ServerConfig {
             static_cast<short>(33333),
         };
@@ -113,37 +112,47 @@ TEST(Networking, LaunchServer)
 
 TEST(Networking, Connection)
 {
-    /*auto LaunchServer = [] {
-        auto make_config = [] {
+    auto LaunchServer = [] (std::shared_ptr<TestServer>& server)
+    {
+        auto make_config = []
+        {
             return network::ServerConfig {
                 static_cast<short>(33333),
             };
         };
 
-        auto server = TestServer(make_config());
-        auto io_thread = server.Start();
+        server = std::make_shared<TestServer>(make_config());
+        auto io_thread = server->Start();
 
         if (io_thread.joinable()) {
             io_thread.join();
         }
     };
 
-    auto LaunchClient = [] {
+    auto LaunchClient = [] (std::shared_ptr<Connector>& client_connector)
+    {
         boost::asio::io_context io_context {};
-        Connector connector(io_context);
+        client_connector = std::make_shared<Connector>(io_context);
 
-        connector.Connect();
-        // std::this_thread::sleep_for(std::chrono::milliseconds(300));
-        if (!connector.connected()) {
-            FAIL();
-        }
+        client_connector->Connect();
     };
 
-    std::thread server_thread(LaunchServer, false);
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
-    std::thread client_thread(LaunchClient, false);
+    std::shared_ptr<TestServer> server;
+    std::shared_ptr<Connector> client_connector;
 
-    server_thread.join();
-    client_thread.join();*/
+    std::thread server_thread(LaunchServer, std::ref(server));
+    while (!server->running()) {} // Wait untill server is ready
+    std::thread client_thread(LaunchClient, std::ref(client_connector));
+    while (!client_connector->connected()) {}
+
+    server->Stop();
+    client_connector->Disconnect();
+
+    if (server_thread.joinable()) {
+        server_thread.join();
+    }
+    if (client_thread.joinable()) {
+        client_thread.join();
+    }
 }
 }
