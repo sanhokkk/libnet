@@ -18,6 +18,7 @@ public:
     explicit Server(ServerConfig config);
     virtual ~Server() = default;
 
+    virtual void Init() = 0;
     std::thread Start();
     void Stop();
 
@@ -28,9 +29,6 @@ protected:
     boost::asio::io_context io_context_ {};
     std::unique_ptr<Listener> listener_;
     std::atomic<bool> running_ {false};
-
-private:
-    virtual void Init() = 0;
 };
 
 inline Server::Server(const ServerConfig config)
@@ -38,13 +36,14 @@ inline Server::Server(const ServerConfig config)
 
 inline std::thread Server::Start()
 {
-    Init();
+    running_ = true;
+
     if (!listener_) {
         SKYMARLIN_LOG_CRITICAL("Listener is not initialized");
         exit(1);
     }
-
     listener_->Start();
+
     std::thread io_thread([this] {
         while (running_) {
             io_context_.run();
@@ -52,7 +51,6 @@ inline std::thread Server::Start()
         SKYMARLIN_LOG_INFO("IO thread terminating");
     });
 
-    running_ = true;
     return io_thread;
 }
 

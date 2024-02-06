@@ -4,6 +4,7 @@
 #include <thread>
 
 #include <boost/asio.hpp>
+#include <skymarlin/network/Client.hpp>
 #include <skymarlin/network/Connector.hpp>
 #include <skymarlin/network/Listener.hpp>
 #include <skymarlin/network/Server.hpp>
@@ -16,7 +17,10 @@ class TestSession final : public Session
 {
 public:
     explicit TestSession(tcp::socket&& socket)
-        : Session(std::move(socket)) {}
+        : Session(std::move(socket))
+    {
+        SKYMARLIN_LOG_INFO("Session created on {}", local_endpoint().address().to_string());
+    }
 
 protected:
     void OnClose() override {}
@@ -45,10 +49,21 @@ public:
 
     ~TestServer() override = default;
 
-private:
     void Init() override
     {
         listener_ = std::make_unique<TestListener>(io_context_, config_.listen_port);
+    }
+};
+
+class TestClient final : public Client
+{
+public:
+    explicit TestClient(ClientConfig&& config)
+        : Client(std::move(config)) {}
+
+    void Connect() override
+    {
+        Connector::Connect<TestSession>(io_context_, config_.remote_endpoint);
     }
 };
 
@@ -91,68 +106,33 @@ private:
     f64 dummy_ {};
 };
 
-TEST(Networking, LaunchServer)
-{
-    auto make_config = []
-    {
-        return network::ServerConfig {
-            static_cast<short>(33333),
-        };
-    };
-
-    auto server = TestServer(make_config());
-    auto io_thread = server.Start();
-    server.Stop();
-
-    if (io_thread.joinable()) {
-        io_thread.join();
-    }
-}
-
-
 TEST(Networking, Connection)
 {
-    auto LaunchServer = [] (std::shared_ptr<TestServer>& server)
-    {
-        auto make_config = []
-        {
-            return network::ServerConfig {
-                static_cast<short>(33333),
-            };
+    constexpr short port = 33333;
+
+    auto make_server_config = [] {
+        return ServerConfig {
+            port,
         };
+    };
+    auto server = TestServer(make_server_config());
+    server.Init();
+    auto server_worker = server.Start();
 
-        server = std::make_shared<TestServer>(make_config());
-        auto io_thread = server->Start();
-
-        if (io_thread.joinable()) {
-            io_thread.join();
-        }
+    auto make_client_config = [] {
+        ;
     };
 
-    auto LaunchClient = [] (std::shared_ptr<Connector>& client_connector)
-    {
-        boost::asio::io_context io_context {};
-        client_connector = std::make_shared<Connector>(io_context);
+    boost::asio::io_context client_io_context {};
+    auto client_connector = Connector(client_io_context);
+    client_connector.Connect();
+    while (!client_connector.connected()) {} // Wait unitll client is connected
 
-        client_connector->Connect();
-    };
+    server.Stop();
+    client_connector.Disconnect();
 
-    std::shared_ptr<TestServer> server;
-    std::shared_ptr<Connector> client_connector;
-
-    std::thread server_thread(LaunchServer, std::ref(server));
-    while (!server->running()) {} // Wait untill server is ready
-    std::thread client_thread(LaunchClient, std::ref(client_connector));
-    while (!client_connector->connected()) {}
-
-    server->Stop();
-    client_connector->Disconnect();
-
-    if (server_thread.joinable()) {
-        server_thread.join();
-    }
-    if (client_thread.joinable()) {
-        client_thread.join();
+    if (server_worker.joinable()) {
+        server_worker.join();
     }
 }
 }

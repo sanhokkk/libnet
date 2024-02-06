@@ -7,13 +7,13 @@
 
 namespace skymarlin::network
 {
-using PacketCreator = std::function<std::shared_ptr<Packet>()>;
+using PacketCreator = std::function<std::unique_ptr<Packet>()>;
 
 class PacketResolver final
 {
 public:
     static void Init(const std::vector<std::pair<PacketType, PacketCreator>>& registers);
-    static std::shared_ptr<Packet> Resolve(PacketType type);
+    static std::unique_ptr<Packet> Resolve(PacketType type);
 
 private:
     inline static std::unordered_map<PacketType, PacketCreator> map_{};
@@ -26,7 +26,7 @@ inline void PacketResolver::Init(const std::vector<std::pair<PacketType, PacketC
     }
 }
 
-inline std::shared_ptr<Packet> PacketResolver::Resolve(const PacketType type)
+inline std::unique_ptr<Packet> PacketResolver::Resolve(const PacketType type)
 {
     if (!map_.contains(type)) {
         return nullptr;
