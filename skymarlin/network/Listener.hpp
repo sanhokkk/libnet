@@ -18,25 +18,31 @@ public:
     void Stop();
 
 private:
-    void Accept();
+    boost::asio::awaitable<void> Listen();
     virtual void OnAccept(tcp::socket&& socket) = 0;
 
+    boost::asio::io_context& io_context_;
     tcp::acceptor acceptor_;
+    std::atomic<bool> listening_ {false};
 };
 
 inline Listener::Listener(boost::asio::io_context& io_context, const short port)
-    : acceptor_(io_context, tcp::endpoint(tcp::v6(), port)) {}
+    : io_context_(io_context), acceptor_(io_context, tcp::endpoint(tcp::v6(), port)) {}
 
 
 inline void Listener::Start()
 {
-    SKYMARLIN_LOG_INFO("Start accepting on {}:{}", acceptor_.local_endpoint().address().to_string(), acceptor_.local_endpoint().port());
+    SKYMARLIN_LOG_INFO("Start accepting on {}:{}", acceptor_.local_endpoint().address().to_string(),
+        acceptor_.local_endpoint().port());
 
-    Accept();
+    listening_ = true;
+    co_spawn(io_context_, Listen(), boost::asio::detached);
 }
 
 inline void Listener::Stop()
 {
+    if (!listening_.exchange(false)) return;
+
     try {
         acceptor_.close();
     }
@@ -45,20 +51,19 @@ inline void Listener::Stop()
     }
 }
 
-
-inline void Listener::Accept()
+inline boost::asio::awaitable<void> Listener::Listen()
 {
-    acceptor_.async_accept([this](const boost::system::error_code& ec, tcp::socket socket) {
-        if (ec) {
-            SKYMARLIN_LOG_ERROR("Error accepting socket: {}", ec.message());
-        }
-        else {
-            SKYMARLIN_LOG_INFO("Accepted from {}:{}", socket.remote_endpoint().address().to_string(), socket.remote_endpoint().port());
-
+    while (listening_) {
+        try {
+            tcp::socket socket = co_await acceptor_.async_accept(boost::asio::use_awaitable);
             OnAccept(std::move(socket));
         }
-
-        Accept();
-    });
+        catch (const boost::system::system_error& e) {
+            SKYMARLIN_LOG_ERROR("Error on accept: {}", e.what());
+        }
+        catch (const std::exception& e) {
+            SKYMARLIN_LOG_ERROR("Exception in Listener: {}", e.what());
+        }
+    }
 }
 }

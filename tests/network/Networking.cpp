@@ -79,15 +79,13 @@ public:
     /*TestPacket(const u32 user_id, const Action action, const f64 dummy)
         :user_id_(user_id), action_(action), dummy_(dummy) {}*/
 
-    void Serialize(boost::asio::mutable_buffer& buffer) const override
+    void Serialize(byte* dest) const override
     {
-        auto bytebuffer = utility::MutableByteBuffer(buffer);
         // bytebuffer << user_id_ << action_ << dummy_;
     };
 
-    void Deserialize(const boost::asio::mutable_buffer& buffer) override
+    void Deserialize(const byte* src) override
     {
-        const auto bytebuffer = utility::ConstByteBuffer(boost::asio::buffer_cast<byte*>(buffer), buffer.size());
         // bytebuffer >> user_id_ >> action_ >> dummy_;
     };
 

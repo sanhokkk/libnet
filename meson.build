@@ -6,6 +6,9 @@ project(
 )
 
 project_sources = [
+    # network
+    'skymarlin/network/Session.cpp',
+
     # protocol
     'skymarlin/protocol/chat/proto/ChatMessage.pb.cc',
 ]

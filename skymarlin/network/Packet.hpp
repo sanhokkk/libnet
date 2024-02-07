@@ -11,44 +11,59 @@ using PacketLength = u16; // Exclude header length
 using PacketType = u8;
 // Reserve u8 for crypto type
 
-constexpr static size_t PACKET_HEADER_SIZE = sizeof(PacketLength) + sizeof(PacketType);
+constexpr static size_t header_buffer_ = sizeof(PacketLength) + sizeof(PacketType);
 
 class Session;
+
+struct PacketHeader
+{
+    PacketLength length {0};
+    PacketType type {0};
+    u8 dummy {0};
+};
 
 class Packet : boost::noncopyable
 {
 public:
     virtual ~Packet() = default;
 
-    virtual void Serialize(boost::asio::mutable_buffer& buffer) const = 0;
-    virtual void Deserialize(const boost::asio::mutable_buffer& buffer) = 0;
+    virtual void Serialize(byte* dest) const = 0;
+    virtual void Deserialize(const byte* src) = 0;
     virtual void Handle(std::shared_ptr<Session> session) = 0;
     virtual size_t length() const = 0;
 
-    static void ReadHeader(byte* buffer, PacketLength& length, PacketType& type);
-    static void WriteHeader(byte* buffer, PacketLength length, PacketType type);
+    static PacketHeader ReadHeader(byte* src);
+    static void WriteHeader(byte* dest, const PacketHeader& header);
 };
 
-inline void Packet::ReadHeader(byte* buffer, PacketLength& length, PacketType& type)
+inline PacketHeader Packet::ReadHeader(byte* src)
 {
-    size_t pos{0};
+    PacketHeader header;
+    size_t pos {0};
 
-    length = utility::BitConverter::Convert<PacketLength>(buffer + pos);
+    header.length = utility::BitConverter::Convert<PacketLength>(src + pos);
     pos += sizeof(PacketLength);
 
-    type = utility::BitConverter::Convert<PacketType>(buffer + pos);
-    // pos += sizeof(PacketType);
+    header.type = utility::BitConverter::Convert<PacketType>(src + pos);
+    pos += sizeof(PacketType);
+
+    header.dummy = utility::BitConverter::Convert<u8>(src + pos);
+    // pos += sizeof(u8);
+
+    return header;
 }
 
-inline void Packet::WriteHeader(byte* buffer, const PacketLength length, const PacketType type)
+inline void Packet::WriteHeader(byte* dest, const PacketHeader& header)
 {
-    size_t pos{0};
+    size_t pos {0};
 
-    utility::BitConverter::Convert<PacketLength>(length, buffer + pos);
+    utility::BitConverter::Convert<PacketLength>(header.length, dest + pos);
     pos += sizeof(PacketLength);
 
-    utility::BitConverter::Convert<PacketType>(type, buffer + pos);
-    // pos += sizeof(PacketType);
-}
+    utility::BitConverter::Convert<PacketType>(header.type, dest + pos);
+    pos += sizeof(PacketType);
 
+    utility::BitConverter::Convert<PacketType>(header.dummy, dest + pos);
+    // pos += sizeof(u8);
+}
 }
