@@ -2,6 +2,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
+#include <skymarlin/network/Session.hpp>
 #include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::network
@@ -33,6 +34,7 @@ private:
 protected:
     const ClientConfig config_;
     boost::asio::io_context io_context_ {};
+    std::shared_ptr<Session> session_;
 
 private:
     tcp::endpoint remote_endpoint_;

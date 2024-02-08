@@ -5,8 +5,8 @@
 
 namespace skymarlin::network
 {
-Session::Session(tcp::socket&& socket)
-    : socket_(std::move(socket))
+Session::Session(boost::asio::io_context& io_context, tcp::socket&& socket)
+    : io_context_(io_context), socket_(std::move(socket))
 {
     try {
         socket_.set_option(tcp::no_delay(true));
@@ -30,23 +30,20 @@ Session::~Session()
     }
 }
 
-void Session::Open(boost::asio::io_context& io_context)
+void Session::Open()
 {
     closed_ = false;
     closing_ = false;
 
-    const auto receive_coroutine = [this] -> boost::asio::awaitable<void> {
-        while (open()) {
-            if (std::unique_ptr<Packet> packet = co_await ReceivePacket()) {
-                packet->Handle(shared_from_this());
+    const auto receive_coroutine = [](std::shared_ptr<Session> self) -> boost::asio::awaitable<void> {
+        while (self->open()) {
+            if (auto packet = co_await self->ReceivePacket()) {
+                packet->Handle(self->shared_from_this());
             }
         }
         SKYMARLIN_LOG_INFO("Session receive coroutine terminating");
     };
-
-    co_spawn(io_context, receive_coroutine(), boost::asio::detached);
-
-    //TODO: send_coroutine
+    co_spawn(io_context_, receive_coroutine(shared_from_this()), boost::asio::detached);
 }
 
 void Session::Close()
@@ -63,53 +60,93 @@ void Session::Close()
     OnClose();
 }
 
+void Session::SendPacket(std::unique_ptr<Packet> packet)
+{
+    if (!packet) return;
+
+    const auto send_coroutine = [this](std::unique_ptr<Packet> _packet) -> boost::asio::awaitable<void> {
+        //TODO: buffer pooling?
+        std::vector<byte> buffer(PACKET_HEADER_SIZE + _packet->length());
+        Packet::WriteHeader(buffer.data(), _packet->header());
+        _packet->Serialize(buffer.data() + PACKET_HEADER_SIZE);
+
+        const auto [ec, _] = co_await socket_.async_send(
+            boost::asio::buffer(buffer), as_tuple(boost::asio::use_awaitable));
+        if (ec) {
+            SKYMARLIN_LOG_ERROR("Error on send packet: {}", ec.what());
+            Close();
+            co_return;
+        }
+    };
+    co_spawn(io_context_, send_coroutine(std::move(packet)), boost::asio::detached);
+}
+
+
 boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReceivePacket()
 {
-    std::unique_ptr<Packet> packet;
-    try {
-        const auto [length, type, dummy] = co_await ReadPacketHeader();
-        const auto buffer = co_await ReadPacketBody(length);
-
-        packet = PacketResolver::Resolve(type);
-        if (!packet) {
-            SKYMARLIN_LOG_ERROR("Failed to resolve packet type");
-            Close();
-            co_return nullptr;
-        }
-
-        packet->Deserialize(boost::asio::buffer_cast<const byte*>(buffer));
-
-        receive_streambuf_.consume(length);
-    }
-    catch (const boost::system::system_error& e) {
-        SKYMARLIN_LOG_ERROR("Error on receiving packet: {}", e.what());
+    const PacketHeader header = co_await ReadPacketHeader();
+    if (!header) {
         Close();
         co_return nullptr;
     }
-    catch (const utility::ByteBufferException& e) {
+
+    std::unique_ptr<Packet> packet = PacketResolver::Resolve(header.type);
+    if (!packet) {
+        SKYMARLIN_LOG_ERROR("Invalid packet type: {}", header.type);
+        Close();
+        co_return nullptr;
+    }
+
+    boost::asio::mutable_buffer buffer;
+    try {
+        buffer = receive_streambuf_.prepare(header.length);
+    }
+    catch (const std::length_error& e) {
+        SKYMARLIN_LOG_ERROR("Not enough receive buffer: {}", e.what());
+    }
+
+    if (!co_await ReadPacketBody(buffer)) {
+        Close();
+        co_return nullptr;
+    }
+
+    receive_streambuf_.commit(header.length);
+    try {
+        packet->Deserialize(boost::asio::buffer_cast<byte*>(buffer));
+    }
+    catch (const std::exception& e) {
         SKYMARLIN_LOG_ERROR("Error on deserializing packet: {}", e.what());
         Close();
         co_return nullptr;
     }
-    catch (const std::exception& e) {
-        SKYMARLIN_LOG_ERROR("Exception in ReceivePacket: {}", e.what());
-    }
+    receive_streambuf_.consume(header.length);
+
     co_return packet;
 }
 
 
 boost::asio::awaitable<PacketHeader> Session::ReadPacketHeader()
 {
-    co_await socket_.async_receive(boost::asio::buffer(header_buffer_), boost::asio::use_awaitable);
+    const auto [ec, _] =
+        co_await socket_.async_receive(boost::asio::buffer(header_buffer_), as_tuple(boost::asio::use_awaitable));
+
+    if (ec) {
+        SKYMARLIN_LOG_ERROR("Error on reading packet header: {}", ec.what());
+        co_return PacketHeader {};
+    }
+
     co_return Packet::ReadHeader(header_buffer_);
 }
 
-boost::asio::awaitable<boost::asio::mutable_buffer> Session::ReadPacketBody(const PacketLength length)
+boost::asio::awaitable<bool> Session::ReadPacketBody(boost::asio::mutable_buffer buffer)
 {
-    auto buffer = receive_streambuf_.prepare(length);
-    co_await socket_.async_receive(buffer, boost::asio::use_awaitable);
-    receive_streambuf_.commit(length);
+    const auto [ec, bytes_transferred] = co_await socket_.async_receive(buffer, as_tuple(boost::asio::use_awaitable));
 
-    co_return buffer;
+    if (ec) {
+        SKYMARLIN_LOG_ERROR("Error on reading packet body: {}", ec.what());
+        co_return false;
+    }
+
+    co_return true;
 }
 }

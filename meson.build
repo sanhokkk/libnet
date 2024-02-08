@@ -15,7 +15,6 @@ project_sources = [
 
 project_tests = [
     # Unit Tests
-    'skymarlin/network/PacketResolver.test.cpp',
     'skymarlin/utility/MutableByteBuffer.test.cpp',
     'skymarlin/utility/BitConverter.test.cpp',
 

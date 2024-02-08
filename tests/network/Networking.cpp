@@ -6,20 +6,59 @@
 #include <boost/asio.hpp>
 #include <skymarlin/network/Client.hpp>
 #include <skymarlin/network/Listener.hpp>
+#include <skymarlin/network/PacketResolver.hpp>
 #include <skymarlin/network/Server.hpp>
 #include <skymarlin/network/Session.hpp>
 #include <skymarlin/utility/MutableByteBuffer.hpp>
 
 namespace skymarlin::network::test
 {
-class TestServer;
-class TestListener;
+class TestPacket final : public Packet
+{
+public:
+    TestPacket() = default;
+
+    explicit TestPacket(const u32 user_id)
+        :user_id_(user_id) {}
+
+    void Serialize(byte* dest) const override
+    {
+        utility::MutableByteBuffer buffer(dest, length());
+        buffer << user_id_;
+    };
+
+    void Deserialize(byte* src) override
+    {
+        const utility::ConstByteBuffer buffer(src, length());
+        buffer >> user_id_;
+    };
+
+    void Handle(std::shared_ptr<Session> session) override
+    {
+        SKYMARLIN_LOG_INFO("Handling TestPacket");
+    }
+
+    PacketLength length() const override
+    {
+        return sizeof(decltype(user_id_));
+    }
+
+    PacketHeader header() const override
+    {
+        return {.length = this->length(), .type = Type, .dummy = 0};
+    }
+
+    constexpr static PacketType Type = 77;
+
+private:
+    u32 user_id_ {};
+};
 
 class TestSession final : public Session
 {
 public:
-    explicit TestSession(tcp::socket&& socket)
-        : Session(std::move(socket))
+    explicit TestSession(boost::asio::io_context& io_context, tcp::socket&& socket)
+        : Session(io_context, std::move(socket))
     {
         SKYMARLIN_LOG_INFO("Session created on {}", local_endpoint().address().to_string());
     }
@@ -49,8 +88,13 @@ private:
     Listener::OnAcceptFunction MakeOnAccpetFunction()
     {
         return [this] (tcp::socket&& socket) {
-            const auto new_session = std::make_shared<TestSession>(std::move(socket));
+            const auto new_session = std::make_shared<TestSession>(io_context_, std::move(socket));
+            new_session->Open();
             AddSession(new_session);
+
+            SKYMARLIN_LOG_INFO("Hello from server...");
+            auto hello_packet = std::make_unique<TestPacket>(888);
+            new_session->SendPacket(std::move(hello_packet));
         };
     }
 
@@ -65,7 +109,11 @@ public:
 
     ~TestClient() override = default;
 
-    void OnConnect(tcp::socket&& socket) override {}
+    void OnConnect(tcp::socket&& socket) override
+    {
+        session_ = std::make_shared<TestSession>(io_context_, std::move(socket));
+        session_->Open();
+    }
 
     void OnStop() override
     {
@@ -81,46 +129,16 @@ public:
     bool stopped {false};
 };
 
-class TestPacket final : public Packet
-{
-public:
-    enum class Action : byte
-    {
-        GREET,
-        CLOSE
-    };
-
-    /*TestPacket(const u32 user_id, const Action action, const f64 dummy)
-        :user_id_(user_id), action_(action), dummy_(dummy) {}*/
-
-    void Serialize(byte* dest) const override
-    {
-        // bytebuffer << user_id_ << action_ << dummy_;
-    };
-
-    void Deserialize(const byte* src) override
-    {
-        // bytebuffer >> user_id_ >> action_ >> dummy_;
-    };
-
-    void Handle(std::shared_ptr<Session> session) override {}
-
-    size_t length() const override
-    {
-        return sizeof(decltype(user_id_)) + sizeof(decltype(action_)) + sizeof(decltype(dummy_));
-    };
-
-    static constexpr PacketType Type = 0x11;
-
-private:
-    u32 user_id_ {};
-    Action action_ {};
-    f64 dummy_ {};
-};
-
 TEST(Networking, Connection)
 {
     constexpr auto port = static_cast<unsigned short>(50000);
+
+    const auto make_packet_factories = [] {
+        return std::vector<std::pair<PacketType, PacketFactory>> {
+            {TestPacket::Type, [] { return std::make_unique<TestPacket>(); }},
+        };
+    };
+    PacketResolver::Init(make_packet_factories());
 
     auto make_server_config = [] {
         return ServerConfig {

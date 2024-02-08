@@ -20,6 +20,8 @@ struct PacketHeader
     PacketLength length {0};
     PacketType type {0};
     u8 dummy {0};
+
+    explicit operator bool() const { return type != 0; }
 };
 
 class Packet : boost::noncopyable
@@ -28,9 +30,11 @@ public:
     virtual ~Packet() = default;
 
     virtual void Serialize(byte* dest) const = 0;
-    virtual void Deserialize(const byte* src) = 0;
+    virtual void Deserialize(byte* src) = 0;
     virtual void Handle(std::shared_ptr<Session> session) = 0;
-    virtual size_t length() const = 0;
+
+    virtual PacketLength length() const = 0;
+    virtual PacketHeader header() const = 0;
 
     static PacketHeader ReadHeader(byte* src);
     static void WriteHeader(byte* dest, const PacketHeader& header);
