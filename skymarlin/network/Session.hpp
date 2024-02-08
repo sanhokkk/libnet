@@ -35,7 +35,7 @@ private:
 
     tcp::socket socket_;
     boost::asio::streambuf receive_streambuf_;
-    byte header_buffer_[header_buffer_] {};
+    byte header_buffer_[PACKET_HEADER_SIZE] {};
 
     std::atomic<bool> closed_ {true};
     std::atomic<bool> closing_ {false};

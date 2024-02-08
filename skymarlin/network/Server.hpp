@@ -7,19 +7,19 @@ namespace skymarlin::network
 {
 struct ServerConfig
 {
-    short listen_port;
     // TODO: Read from config file
+    const unsigned short listen_port;
 };
+
 
 class Server : boost::noncopyable
 {
 public:
     Server() = delete;
-    explicit Server(ServerConfig config);
+    Server(ServerConfig&& config, Listener::OnAcceptFunction&& on_accept);
     virtual ~Server() = default;
 
-    virtual void Init() = 0;
-    std::thread Start();
+    void Start();
     void Stop();
 
     bool running() const { return running_; }
@@ -31,10 +31,11 @@ protected:
     std::atomic<bool> running_ {false};
 };
 
-inline Server::Server(const ServerConfig config)
-    : config_(config) {}
+inline Server::Server(ServerConfig&& config, Listener::OnAcceptFunction&& on_accept)
+    : config_(std::move(config)),
+    listener_(std::make_unique<Listener>(io_context_, config_.listen_port, std::move(on_accept))) {}
 
-inline std::thread Server::Start()
+inline void Server::Start()
 {
     running_ = true;
 
@@ -44,14 +45,12 @@ inline std::thread Server::Start()
     }
     listener_->Start();
 
-    std::thread io_thread([this] {
+    std::thread([this] {
         while (running_) {
             io_context_.run();
         }
         SKYMARLIN_LOG_INFO("IO thread terminating");
-    });
-
-    return io_thread;
+    }).detach();
 }
 
 inline void Server::Stop()

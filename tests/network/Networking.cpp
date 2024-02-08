@@ -5,7 +5,6 @@
 
 #include <boost/asio.hpp>
 #include <skymarlin/network/Client.hpp>
-#include <skymarlin/network/Connector.hpp>
 #include <skymarlin/network/Listener.hpp>
 #include <skymarlin/network/Server.hpp>
 #include <skymarlin/network/Session.hpp>
@@ -13,6 +12,9 @@
 
 namespace skymarlin::network::test
 {
+class TestServer;
+class TestListener;
+
 class TestSession final : public Session
 {
 public:
@@ -26,33 +28,33 @@ protected:
     void OnClose() override {}
 };
 
-class TestListener final : public Listener
+class TestServer final : public Server, std::enable_shared_from_this<TestServer>
 {
 public:
-    TestListener(boost::asio::io_context& io_context, const short listen_port)
-        : Listener(io_context, listen_port) {}
-
-    ~TestListener() override = default;
-
-protected:
-    void OnAccept(tcp::socket&& socket) override
-    {
-        auto session = std::make_shared<TestSession>(std::move(socket));
-    }
-};
-
-class TestServer final : public Server
-{
-public:
-    explicit TestServer(ServerConfig config)
-        : Server(config) {}
+    explicit TestServer(ServerConfig&& config)
+        : Server(std::move(config), MakeOnAccpetFunction()) {}
 
     ~TestServer() override = default;
 
-    void Init() override
+    void AddSession(const std::shared_ptr<Session>& session)
     {
-        listener_ = std::make_unique<TestListener>(io_context_, config_.listen_port);
+        sessions_.push_back(session);
     }
+
+    std::mutex stopped_mtx;
+    std::condition_variable stopped_cv;
+    bool stopped {false};
+
+private:
+    Listener::OnAcceptFunction MakeOnAccpetFunction()
+    {
+        return [this] (tcp::socket&& socket) {
+            const auto new_session = std::make_shared<TestSession>(std::move(socket));
+            AddSession(new_session);
+        };
+    }
+
+    std::vector<std::shared_ptr<Session>> sessions_;
 };
 
 class TestClient final : public Client
@@ -61,10 +63,22 @@ public:
     explicit TestClient(ClientConfig&& config)
         : Client(std::move(config)) {}
 
-    void Connect() override
+    ~TestClient() override = default;
+
+    void OnConnect(tcp::socket&& socket) override {}
+
+    void OnStop() override
     {
-        Connector::Connect<TestSession>(io_context_, config_.remote_endpoint);
+        {
+            std::lock_guard lock(stopped_mtx);
+            stopped = true;
+        }
+        stopped_cv.notify_one();
     }
+
+    std::mutex stopped_mtx;
+    std::condition_variable stopped_cv;
+    bool stopped {false};
 };
 
 class TestPacket final : public Packet
@@ -106,31 +120,28 @@ private:
 
 TEST(Networking, Connection)
 {
-    constexpr short port = 33333;
+    constexpr auto port = static_cast<unsigned short>(50000);
 
     auto make_server_config = [] {
         return ServerConfig {
-            port,
+            .listen_port = port
         };
     };
     auto server = TestServer(make_server_config());
-    server.Init();
-    auto server_worker = server.Start();
+    server.Start();
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    auto make_client_config = [] {
-        ;
-    };
+    auto client = TestClient({"localhost", port});
+    client.Start();
 
-    boost::asio::io_context client_io_context {};
-    auto client_connector = Connector(client_io_context);
-    client_connector.Connect();
-    while (!client_connector.connected()) {} // Wait unitll client is connected
+    {
+        std::unique_lock lock(client.stopped_mtx);
+        client.stopped_cv.wait(lock, [&client] { return client.stopped; });
+    }
 
-    server.Stop();
-    client_connector.Disconnect();
-
-    if (server_worker.joinable()) {
-        server_worker.join();
+    {
+        std::unique_lock lock(server.stopped_mtx);
+        server.stopped_cv.wait(lock, [&server] { return server.stopped; });
     }
 }
 }

@@ -9,13 +9,12 @@ namespace skymarlin::network::test
 class TestPacket final : public Packet
 {
 public:
-    void Serialize(boost::asio::mutable_buffer& buffer) const override {};
+    void Serialize(byte* dest) const override {}
+    void Deserialize(const byte* src) override {}
 
-    void Deserialize(const boost::asio::mutable_buffer& buffer) override {};
+    void Handle(std::shared_ptr<Session> session) override {}
 
-    void Handle(std::shared_ptr<skymarlin::network::Session> session) override {}
-
-    size_t length() const override { return 0; };
+    size_t length() const override { return 0; }
 
     static constexpr PacketType Type = 0x11;
 };

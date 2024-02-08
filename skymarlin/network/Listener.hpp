@@ -8,26 +8,29 @@ namespace skymarlin::network
 {
 using boost::asio::ip::tcp;
 
-class Listener : boost::noncopyable
+class Listener final : boost::noncopyable
 {
 public:
-    Listener(boost::asio::io_context& io_context, short port);
-    virtual ~Listener() = default;
+    using OnAcceptFunction = std::function<void(tcp::socket&& socket)>;
+
+    Listener(boost::asio::io_context& io_context, short port, const OnAcceptFunction& on_accept);
+    ~Listener() = default;
 
     void Start();
     void Stop();
 
 private:
     boost::asio::awaitable<void> Listen();
-    virtual void OnAccept(tcp::socket&& socket) = 0;
+    OnAcceptFunction OnAccept;
 
     boost::asio::io_context& io_context_;
     tcp::acceptor acceptor_;
     std::atomic<bool> listening_ {false};
 };
 
-inline Listener::Listener(boost::asio::io_context& io_context, const short port)
-    : io_context_(io_context), acceptor_(io_context, tcp::endpoint(tcp::v6(), port)) {}
+inline Listener::Listener(boost::asio::io_context& io_context, const short port,
+    const OnAcceptFunction& on_accept)
+    : OnAccept(on_accept), io_context_(io_context), acceptor_(io_context, tcp::endpoint(tcp::v6(), port)) {}
 
 
 inline void Listener::Start()

@@ -11,7 +11,7 @@ using PacketLength = u16; // Exclude header length
 using PacketType = u8;
 // Reserve u8 for crypto type
 
-constexpr static size_t header_buffer_ = sizeof(PacketLength) + sizeof(PacketType);
+constexpr static size_t PACKET_HEADER_SIZE = sizeof(PacketLength) + sizeof(PacketType);
 
 class Session;
 
