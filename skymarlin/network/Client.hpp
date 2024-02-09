@@ -52,7 +52,7 @@ public:
     bool running() const { return running_; }
 
 private:
-    boost::asio::awaitable<tcp::socket> Connect();
+    boost::asio::awaitable<std::optional<tcp::socket>> Connect();
 
 protected:
     const ClientConfig config_;

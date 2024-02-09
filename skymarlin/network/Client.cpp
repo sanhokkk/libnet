@@ -38,7 +38,9 @@ void Client::Start()
     co_spawn(io_context_,
         [this]() -> boost::asio::awaitable<void> {
             auto socket = co_await Connect();
-            session_ = session_factory_(io_context_, std::move(socket));
+            if (!socket) co_return;
+
+            session_ = session_factory_(io_context_, std::move(*socket));
             session_->Open();
         },
         boost::asio::detached
@@ -51,14 +53,16 @@ void Client::Start()
 
 void Client::Stop()
 {
+    if (!running_.exchange(false)) return;
+
     SKYMARLIN_LOG_INFO("Stopping the client...");
     running_ = false;
 
-    session_->Close();
+    if (session_) session_->Close();
     io_context_.stop();
 }
 
-boost::asio::awaitable<tcp::socket> Client::Connect()
+boost::asio::awaitable<std::optional<tcp::socket>> Client::Connect()
 {
     auto socket = tcp::socket(io_context_);
     auto resolver = tcp::resolver(io_context_);
@@ -72,6 +76,7 @@ boost::asio::awaitable<tcp::socket> Client::Connect()
     catch (const boost::system::system_error& e) {
         SKYMARLIN_LOG_ERROR("Error on connect: {}", e.what());
         Stop();
+        co_return std::nullopt;
     }
 
     co_return socket;

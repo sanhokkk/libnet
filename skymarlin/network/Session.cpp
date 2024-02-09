@@ -41,20 +41,10 @@ Session::Session(boost::asio::io_context& io_context, tcp::socket&& socket)
     }
 }
 
-
 Session::~Session()
 {
-    SessionManager::RemoveSession(id_);
-
+    SKYMARLIN_LOG_INFO("Session destructor");
     Close();
-
-    try {
-        socket_.close();
-        socket_.shutdown(tcp::socket::shutdown_send);
-    }
-    catch (const boost::system::system_error& e) {
-        SKYMARLIN_LOG_ERROR("Error closing socket: {}", e.what());
-    }
 }
 
 void Session::Open()
@@ -80,7 +70,8 @@ void Session::Close()
     if (closed_.exchange(true)) return;
 
     try {
-        socket_.shutdown(tcp::socket::shutdown_receive);
+        socket_.shutdown(tcp::socket::shutdown_both);
+        socket_.close();
     }
     catch (const boost::system::system_error& e) {
         SKYMARLIN_LOG_ERROR("Error closing socket: {}", e.what());
@@ -110,7 +101,6 @@ void Session::SendPacket(std::unique_ptr<Packet> packet)
     };
     co_spawn(io_context_, send_coroutine(shared_from_this(), std::move(packet)), boost::asio::detached);
 }
-
 
 boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReceivePacket()
 {

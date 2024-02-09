@@ -52,6 +52,9 @@ public:
     tcp::endpoint local_endpoint() const { return socket_.local_endpoint(); }
     tcp::endpoint remote_endpoint() const { return socket_.remote_endpoint(); }
 
+    template<typename SessionType> requires std::is_base_of_v<Session, SessionType>
+    static SessionFactory MakeSessionFactory();
+
 protected:
     virtual void OnOpen() = 0;
     virtual void OnClose() = 0;
@@ -70,4 +73,13 @@ private:
     std::atomic<bool> closed_ {true};
     std::atomic<bool> closing_ {false};
 };
+
+
+template <typename SessionType> requires std::is_base_of_v<Session, SessionType>
+SessionFactory Session::MakeSessionFactory()
+{
+    return [](boost::asio::io_context& io_context, tcp::socket&& socket) {
+        return std::make_shared<SessionType>(io_context, std::move(socket));
+    };
+}
 }

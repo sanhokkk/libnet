@@ -99,34 +99,18 @@ class TestServer final : public Server, std::enable_shared_from_this<TestServer>
 {
 public:
     explicit TestServer(ServerConfig&& config)
-        : Server(std::move(config), MakeSessionFactory()) {}
+        : Server(std::move(config), Session::MakeSessionFactory<TestSession>()) {}
 
     ~TestServer() override = default;
-
-private:
-    static SessionFactory MakeSessionFactory()
-    {
-        return [](boost::asio::io_context& io_context, tcp::socket&& socket) {
-            return std::make_shared<TestSession>(io_context, std::move(socket));
-        };
-    }
 };
 
 class TestClient final : public Client
 {
 public:
     explicit TestClient(ClientConfig&& config)
-        : Client(std::move(config), MakeSessionFactory()) {}
+        : Client(std::move(config), Session::MakeSessionFactory<TestSession>()) {}
 
-    ~TestClient() override = default;
-
-private:
-    static SessionFactory MakeSessionFactory()
-    {
-        return [](boost::asio::io_context& io_context, tcp::socket&& socket) {
-            return std::make_shared<TestSession>(io_context, std::move(socket));
-        };
-    }
+    // ~TestClient() override = default;
 };
 
 TEST(Networking, StartAndStopServer)
@@ -136,10 +120,16 @@ TEST(Networking, StartAndStopServer)
         server.Start();
     });
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     server.Stop();
 
     server_thread.join();
+}
+
+TEST(Networking, StartAndStopClient)
+{
+    auto client = TestClient({"localhost", 55555}); // should faild to connect
+    client.Start();
 }
 
 TEST(Networking, Connection)
@@ -163,11 +153,11 @@ TEST(Networking, Connection)
         client.Start();
     });
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    server.Stop();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     client.Stop();
-
-    server_thread.join();
     client_thread.join();
+
+    server.Stop();
+    server_thread.join();
 }
 }

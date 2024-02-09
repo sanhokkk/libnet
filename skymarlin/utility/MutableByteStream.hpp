@@ -39,15 +39,7 @@ public:
 
     void Clear() const;
 
-    template <NumericType T>
-    void Append(T value);
-
-    template <typename T> requires std::same_as<T, std::string_view>
-    void Append(T value);
-
     byte* data() const { return data_; }
-
-    byte& operator[](size_t pos) const;
 
     MutableByteStream& operator<<(bool value);
 
@@ -76,6 +68,12 @@ public:
     MutableByteStream& operator<<(const std::string& value);
 
 private:
+    template <NumericType T>
+    void Append(T value);
+
+    template <typename T> requires std::same_as<T, std::string_view>
+    void Append(T value);
+
     mutable size_t wpos_{0};
 };
 
@@ -123,13 +121,6 @@ void MutableByteStream::Append(const T value)
         // TODO: encoding
         Append<char>(c);
     }
-}
-
-inline byte& MutableByteStream::operator[](const size_t pos) const
-{
-    if (pos > size_) { throw ByteBufferPositionException(true, pos, sizeof(byte), size_); }
-
-    return data_[pos];
 }
 
 inline MutableByteStream& MutableByteStream::operator<<(const bool value)

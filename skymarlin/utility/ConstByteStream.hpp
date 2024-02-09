@@ -39,19 +39,11 @@ public:
 
     ConstByteStream(ConstByteStream&& x) noexcept;
 
-    template <NumericType T>
-    T Read() const;
-
-    template <typename T> requires std::same_as<T, std::string>
-    T Read() const;
-
     void Skip(size_t n) const;
 
     const byte* data() const { return data_; }
 
     size_t size() const { return size_; }
-
-    const byte& operator[](size_t pos) const;
 
     ConstByteStream& operator>>(bool& value) const;
 
@@ -76,6 +68,13 @@ public:
     ConstByteStream& operator>>(f64& value) const;
 
     ConstByteStream& operator>>(std::string& value) const;
+
+private:
+    template <NumericType T>
+    T Read() const;
+
+    template <typename T> requires std::same_as<T, std::string>
+    T Read() const;
 
 protected:
     byte* data_;
@@ -129,15 +128,6 @@ inline void ConstByteStream::Skip(const size_t n) const
     }
 
     rpos_ += n;
-}
-
-inline const byte& ConstByteStream::operator[](const size_t pos) const
-{
-    if (pos > size_) {
-        throw ByteBufferPositionException(true, pos, sizeof(byte), size_);
-    }
-
-    return data_[pos];
 }
 
 inline ConstByteStream& ConstByteStream::operator>>(bool& value) const
