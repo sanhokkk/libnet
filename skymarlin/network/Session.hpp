@@ -33,10 +33,9 @@ protected:
 private:
     boost::asio::awaitable<std::unique_ptr<Packet>> ReceivePacket();
     boost::asio::awaitable<PacketHeader> ReadPacketHeader();
-    boost::asio::awaitable<bool> ReadPacketBody(boost::asio::mutable_buffer buffer);
+    boost::asio::awaitable<std::unique_ptr<Packet>> ReadPacketBody(std::unique_ptr<Packet> packet, PacketLength length);
 
     tcp::socket socket_;
-    boost::asio::streambuf receive_streambuf_;
     byte header_buffer_[PACKET_HEADER_SIZE] {};
 
     std::atomic<bool> closed_ {true};

@@ -134,11 +134,11 @@ TEST(Networking, Connection)
     constexpr auto port = static_cast<unsigned short>(50000);
 
     const auto make_packet_factories = [] {
-        return std::vector<std::pair<PacketType, PacketFactory>> {
-            {TestPacket::Type, [] { return std::make_unique<TestPacket>(); }},
+        return std::vector {
+            PacketResolver::MakePacketFactory<TestPacket>(TestPacket::Type),
         };
     };
-    PacketResolver::Init(make_packet_factories());
+    PacketResolver::Register(make_packet_factories());
 
     auto make_server_config = [] {
         return ServerConfig {

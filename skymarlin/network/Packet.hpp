@@ -18,10 +18,12 @@ class Session;
 struct PacketHeader
 {
     PacketLength length {0};
-    PacketType type {0};
+    PacketType type {INVALID_PACKET_TYPE};
     u8 dummy {0};
 
-    explicit operator bool() const { return type != 0; }
+    explicit operator bool() const { return type != INVALID_PACKET_TYPE; }
+
+    static constexpr PacketType INVALID_PACKET_TYPE = 0;
 };
 
 class Packet : boost::noncopyable

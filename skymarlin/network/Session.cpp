@@ -73,7 +73,7 @@ void Session::SendPacket(std::unique_ptr<Packet> packet)
         const auto [ec, _] = co_await socket_.async_send(
             boost::asio::buffer(buffer), as_tuple(boost::asio::use_awaitable));
         if (ec) {
-            SKYMARLIN_LOG_ERROR("Error on send packet: {}", ec.what());
+            SKYMARLIN_LOG_ERROR("Error on sending packet: {}", ec.what());
             Close();
             co_return;
         }
@@ -97,33 +97,14 @@ boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReceivePacket()
         co_return nullptr;
     }
 
-    boost::asio::mutable_buffer buffer;
-    try {
-        buffer = receive_streambuf_.prepare(header.length);
-    }
-    catch (const std::length_error& e) {
-        SKYMARLIN_LOG_ERROR("Not enough receive buffer: {}", e.what());
-    }
-
-    if (!co_await ReadPacketBody(buffer)) {
+    packet = co_await ReadPacketBody(std::move(packet), header.length);
+    if (!packet) {
         Close();
         co_return nullptr;
     }
-
-    receive_streambuf_.commit(header.length);
-    try {
-        packet->Deserialize(boost::asio::buffer_cast<byte*>(buffer));
-    }
-    catch (const std::exception& e) {
-        SKYMARLIN_LOG_ERROR("Error on deserializing packet: {}", e.what());
-        Close();
-        co_return nullptr;
-    }
-    receive_streambuf_.consume(header.length);
 
     co_return packet;
 }
-
 
 boost::asio::awaitable<PacketHeader> Session::ReadPacketHeader()
 {
@@ -138,15 +119,27 @@ boost::asio::awaitable<PacketHeader> Session::ReadPacketHeader()
     co_return Packet::ReadHeader(header_buffer_);
 }
 
-boost::asio::awaitable<bool> Session::ReadPacketBody(boost::asio::mutable_buffer buffer)
+boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReadPacketBody(std::unique_ptr<Packet> packet, PacketLength length)
 {
-    const auto [ec, bytes_transferred] = co_await socket_.async_receive(buffer, as_tuple(boost::asio::use_awaitable));
+    //TODO: buffer pooling?
+    std::vector<byte> buffer(length);
+
+    const auto [ec, _] =
+        co_await socket_.async_receive(boost::asio::buffer(buffer), as_tuple(boost::asio::use_awaitable));
 
     if (ec) {
         SKYMARLIN_LOG_ERROR("Error on reading packet body: {}", ec.what());
-        co_return false;
+        co_return nullptr;
     }
 
-    co_return true;
+    try {
+        packet->Deserialize(buffer.data());
+    }
+    catch (const std::exception& e) {
+        SKYMARLIN_LOG_ERROR("Error on deserializing packet: {}", e.what());
+        co_return nullptr;
+    }
+
+    co_return packet;
 }
 }
