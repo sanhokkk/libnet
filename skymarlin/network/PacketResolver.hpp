@@ -9,6 +9,7 @@ namespace skymarlin::network
 {
 using PacketFactory = std::function<std::unique_ptr<Packet>()>;
 
+
 class PacketResolver final
 {
 public:
@@ -21,6 +22,7 @@ public:
 private:
     inline static std::unordered_map<PacketType, PacketFactory> factory_map_ {};
 };
+
 
 inline void PacketResolver::Register(const std::vector<std::pair<PacketType, PacketFactory>>& factories)
 {

@@ -9,11 +9,13 @@ namespace skymarlin::network
 {
 using boost::asio::ip::tcp;
 
+
 struct ClientConfig
 {
     const std::string remote_adress;
     const unsigned short remote_port;
 };
+
 
 class Client : boost::noncopyable
 {
@@ -40,6 +42,7 @@ private:
     tcp::endpoint remote_endpoint_;
     std::atomic<bool> running_ {false};
 };
+
 
 inline Client::Client(ClientConfig&& config)
     : config_(std::move(config)) {}

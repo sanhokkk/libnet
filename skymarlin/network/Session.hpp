@@ -5,11 +5,13 @@
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
 #include <skymarlin/network/Packet.hpp>
-#include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::network
 {
 using boost::asio::ip::tcp;
+using SessionFactory = std::function<std::shared_ptr<Session>(boost::asio::io_context&, tcp::socket&&)>;
+using SessionId = u64;
+
 
 class Session : public std::enable_shared_from_this<Session>, boost::noncopyable
 {
@@ -21,6 +23,7 @@ public:
     void Close(); //TODO: Get error as parameter
     void SendPacket(std::unique_ptr<Packet> packet);
 
+    SessionId id() const { return id_; }
     bool open() const { return !closed_ && !closing_; };
     tcp::endpoint local_endpoint() const { return socket_.local_endpoint(); }
     tcp::endpoint remote_endpoint() const { return socket_.remote_endpoint(); }
@@ -38,6 +41,7 @@ private:
     tcp::socket socket_;
     byte header_buffer_[PACKET_HEADER_SIZE] {};
 
+    SessionId id_ {0};
     std::atomic<bool> closed_ {true};
     std::atomic<bool> closing_ {false};
 };

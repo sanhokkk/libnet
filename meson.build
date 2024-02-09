@@ -7,6 +7,8 @@ project(
 
 project_sources = [
     # network
+    'skymarlin/network/Listener.cpp',
+    'skymarlin/network/Server.cpp',
     'skymarlin/network/Session.cpp',
 
     # protocol

@@ -1,7 +1,8 @@
 #include <skymarlin/network/Session.hpp>
 
 #include <skymarlin/network/PacketResolver.hpp>
-#include <skymarlin/utility/ByteBufferExceptions.hpp>
+#include <skymarlin/network/SessionManager.hpp>
+#include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::network
 {
@@ -19,6 +20,8 @@ Session::Session(boost::asio::io_context& io_context, tcp::socket&& socket)
 
 Session::~Session()
 {
+    SessionManager::RemoveSession(id_);
+
     Close();
 
     try {
@@ -119,7 +122,8 @@ boost::asio::awaitable<PacketHeader> Session::ReadPacketHeader()
     co_return Packet::ReadHeader(header_buffer_);
 }
 
-boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReadPacketBody(std::unique_ptr<Packet> packet, PacketLength length)
+boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReadPacketBody(std::unique_ptr<Packet> packet,
+    PacketLength length)
 {
     //TODO: buffer pooling?
     std::vector<byte> buffer(length);

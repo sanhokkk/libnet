@@ -71,34 +71,13 @@ class TestServer final : public Server, std::enable_shared_from_this<TestServer>
 {
 public:
     explicit TestServer(ServerConfig&& config)
-        : Server(std::move(config), MakeOnAccpetFunction()) {}
+        : Server(std::move(config)) {}
 
     ~TestServer() override = default;
-
-    void AddSession(const std::shared_ptr<Session>& session)
-    {
-        sessions_.push_back(session);
-    }
 
     std::mutex stopped_mtx;
     std::condition_variable stopped_cv;
     bool stopped {false};
-
-private:
-    Listener::OnAcceptFunction MakeOnAccpetFunction()
-    {
-        return [this] (tcp::socket&& socket) {
-            const auto new_session = std::make_shared<TestSession>(io_context_, std::move(socket));
-            new_session->Open();
-            AddSession(new_session);
-
-            SKYMARLIN_LOG_INFO("Hello from server...");
-            auto hello_packet = std::make_unique<TestPacket>(888);
-            new_session->SendPacket(std::move(hello_packet));
-        };
-    }
-
-    std::vector<std::shared_ptr<Session>> sessions_;
 };
 
 class TestClient final : public Client

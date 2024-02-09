@@ -15,6 +15,7 @@ constexpr static size_t PACKET_HEADER_SIZE = sizeof(PacketLength) + sizeof(Packe
 
 class Session;
 
+
 struct PacketHeader
 {
     PacketLength length {0};
@@ -25,6 +26,7 @@ struct PacketHeader
 
     static constexpr PacketType INVALID_PACKET_TYPE = 0;
 };
+
 
 class Packet : boost::noncopyable
 {
@@ -41,6 +43,7 @@ public:
     static PacketHeader ReadHeader(byte* src);
     static void WriteHeader(byte* dest, const PacketHeader& header);
 };
+
 
 inline PacketHeader Packet::ReadHeader(byte* src)
 {
