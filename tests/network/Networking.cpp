@@ -33,7 +33,7 @@
 #include <skymarlin/network/Server.hpp>
 #include <skymarlin/network/Session.hpp>
 #include <skymarlin/utility/Log.hpp>
-#include <skymarlin/utility/MutableByteBuffer.hpp>
+#include <skymarlin/utility/MutableByteStream.hpp>
 
 namespace skymarlin::network::test
 {
@@ -47,13 +47,13 @@ public:
 
     void Serialize(byte* dest) const override
     {
-        utility::MutableByteBuffer buffer(dest, length());
+        utility::MutableByteStream buffer(dest, length());
         buffer << user_id_;
     };
 
     void Deserialize(byte* src) override
     {
-        const utility::ConstByteBuffer buffer(src, length());
+        const utility::ConstByteStream buffer(src, length());
         buffer >> user_id_;
     };
 

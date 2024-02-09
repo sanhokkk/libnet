@@ -23,16 +23,16 @@
  */
 
 #include <gtest/gtest.h>
-#include <skymarlin/utility/MutableByteBuffer.hpp>
+#include <skymarlin/utility/MutableByteStream.hpp>
 #include <skymarlin/utility/TypeDefinitions.hpp>
 
 namespace skymarlin::utility
 {
-TEST(MutableByteBuffer, Write)
+TEST(MutableByteStream, Write)
 {
     constexpr size_t buffer_size = 256;
     byte src[buffer_size]{};
-    auto buffer = MutableByteBuffer(src, buffer_size);
+    auto buffer = MutableByteStream(src, buffer_size);
 
     constexpr std::string_view sv("I am a string");
     buffer << 42 << sv << 125.12321f;
@@ -47,11 +47,11 @@ TEST(MutableByteBuffer, Write)
     ASSERT_EQ(125.12321f, f1);
 }
 
-TEST(MutableByteBuffer, InvalidStringSize)
+TEST(MutableByteStream, InvalidStringSize)
 {
     constexpr size_t buffer_size = 16;
     byte src[buffer_size]{};
-    auto buffer = MutableByteBuffer(src, buffer_size);
+    auto buffer = MutableByteStream(src, buffer_size);
 
     try {
         std::string s {};

@@ -30,10 +30,10 @@ namespace skymarlin::utility
 {
 using namespace std::literals::string_view_literals;
 
-class ByteBufferException : public std::exception
+class ByteStreamException : public std::exception
 {
 public:
-    ~ByteBufferException() override = default;
+    ~ByteStreamException() override = default;
 
     const char* what() const noexcept override { return message_.c_str(); }
 
@@ -44,7 +44,7 @@ private:
     std::string message_;
 };
 
-class ByteBufferPositionException final : public ByteBufferException
+class ByteBufferPositionException final : public ByteStreamException
 {
 public:
     ByteBufferPositionException(const bool read, const size_t pos, const size_t value_size,
@@ -61,7 +61,7 @@ public:
     ~ByteBufferPositionException() override = default;
 };
 
-class ByteBufferInvalidValueException final : public ByteBufferException
+class ByteBufferInvalidValueException final : public ByteStreamException
 {
 public:
     ByteBufferInvalidValueException(const bool read, const std::string_view value,

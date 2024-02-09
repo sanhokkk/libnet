@@ -18,7 +18,7 @@ project_sources = [
 
 project_tests = [
     # Unit Tests
-    'skymarlin/utility/MutableByteBuffer.test.cpp',
+    'skymarlin/utility/MutableByteStream.test.cpp',
     'skymarlin/utility/BitConverter.test.cpp',
 
     # Functional/Integration Tests

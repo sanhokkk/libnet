@@ -27,18 +27,17 @@
 #include <string>
 
 #include <boost/core/noncopyable.hpp>
-#include <boost/asio/buffer.hpp>
 #include <skymarlin/utility/BitConverter.hpp>
-#include <skymarlin/utility/ByteBufferExceptions.hpp>
+#include <skymarlin/utility/ByteStreamExceptions.hpp>
 
 namespace skymarlin::utility
 {
-class ConstByteBuffer : boost::noncopyable
+class ConstByteStream : boost::noncopyable
 {
 public:
-    ConstByteBuffer(byte* buffer, size_t size);
+    ConstByteStream(byte* buffer, size_t size);
 
-    ConstByteBuffer(ConstByteBuffer&& x) noexcept;
+    ConstByteStream(ConstByteStream&& x) noexcept;
 
     template <NumericType T>
     T Read() const;
@@ -54,29 +53,29 @@ public:
 
     const byte& operator[](size_t pos) const;
 
-    ConstByteBuffer& operator>>(bool& value) const;
+    ConstByteStream& operator>>(bool& value) const;
 
-    ConstByteBuffer& operator>>(byte& value) const;
+    ConstByteStream& operator>>(byte& value) const;
 
-    ConstByteBuffer& operator>>(u16& value) const;
+    ConstByteStream& operator>>(u16& value) const;
 
-    ConstByteBuffer& operator>>(u32& value) const;
+    ConstByteStream& operator>>(u32& value) const;
 
-    ConstByteBuffer& operator>>(u64& value) const;
+    ConstByteStream& operator>>(u64& value) const;
 
-    ConstByteBuffer& operator>>(i8& value) const;
+    ConstByteStream& operator>>(i8& value) const;
 
-    ConstByteBuffer& operator>>(i16& value) const;
+    ConstByteStream& operator>>(i16& value) const;
 
-    ConstByteBuffer& operator>>(i32& value) const;
+    ConstByteStream& operator>>(i32& value) const;
 
-    ConstByteBuffer& operator>>(i64& value) const;
+    ConstByteStream& operator>>(i64& value) const;
 
-    ConstByteBuffer& operator>>(f32& value) const;
+    ConstByteStream& operator>>(f32& value) const;
 
-    ConstByteBuffer& operator>>(f64& value) const;
+    ConstByteStream& operator>>(f64& value) const;
 
-    ConstByteBuffer& operator>>(std::string& value) const;
+    ConstByteStream& operator>>(std::string& value) const;
 
 protected:
     byte* data_;
@@ -84,10 +83,10 @@ protected:
     mutable size_t rpos_{0};
 };
 
-inline ConstByteBuffer::ConstByteBuffer(byte* buffer, const size_t size)
+inline ConstByteStream::ConstByteStream(byte* buffer, const size_t size)
     : data_(buffer), size_(size) {}
 
-inline ConstByteBuffer::ConstByteBuffer(ConstByteBuffer&& x) noexcept
+inline ConstByteStream::ConstByteStream(ConstByteStream&& x) noexcept
     : data_(x.data_), size_(x.size_), rpos_(x.rpos_)
 {
     x.data_ = nullptr;
@@ -97,7 +96,7 @@ inline ConstByteBuffer::ConstByteBuffer(ConstByteBuffer&& x) noexcept
 
 
 template <NumericType T>
-T ConstByteBuffer::Read() const
+T ConstByteStream::Read() const
 {
     T value = BitConverter::Convert<T>(data_ + rpos_);
     rpos_ += sizeof(T);
@@ -105,7 +104,7 @@ T ConstByteBuffer::Read() const
 }
 
 template <typename T> requires std::same_as<T, std::string>
-T ConstByteBuffer::Read() const
+T ConstByteStream::Read() const
 {
     //TODO: Get StringHeader via BitConverter
     const size_t length = Read<StringLengthType>();
@@ -123,7 +122,7 @@ T ConstByteBuffer::Read() const
     return value;
 }
 
-inline void ConstByteBuffer::Skip(const size_t n) const
+inline void ConstByteStream::Skip(const size_t n) const
 {
     if (rpos_ + n > size_) {
         throw ByteBufferPositionException(true, rpos_, n, size_);
@@ -132,7 +131,7 @@ inline void ConstByteBuffer::Skip(const size_t n) const
     rpos_ += n;
 }
 
-inline const byte& ConstByteBuffer::operator[](const size_t pos) const
+inline const byte& ConstByteStream::operator[](const size_t pos) const
 {
     if (pos > size_) {
         throw ByteBufferPositionException(true, pos, sizeof(byte), size_);
@@ -141,75 +140,75 @@ inline const byte& ConstByteBuffer::operator[](const size_t pos) const
     return data_[pos];
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(bool& value) const
+inline ConstByteStream& ConstByteStream::operator>>(bool& value) const
 {
     value = Read<byte>() > 0;
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(byte& value) const
+inline ConstByteStream& ConstByteStream::operator>>(byte& value) const
 {
     value = Read<byte>();
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(u16& value) const
+inline ConstByteStream& ConstByteStream::operator>>(u16& value) const
 {
     value = Read<u16>();
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(u32& value) const
+inline ConstByteStream& ConstByteStream::operator>>(u32& value) const
 {
     value = Read<u32>();
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(u64& value) const
+inline ConstByteStream& ConstByteStream::operator>>(u64& value) const
 {
     value = Read<u64>();
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(i8& value) const
+inline ConstByteStream& ConstByteStream::operator>>(i8& value) const
 {
     value = Read<i8>();
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(i16& value) const
+inline ConstByteStream& ConstByteStream::operator>>(i16& value) const
 {
     value = Read<i16>();
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(i32& value) const
+inline ConstByteStream& ConstByteStream::operator>>(i32& value) const
 {
     value = Read<i32>();
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(i64& value) const
+inline ConstByteStream& ConstByteStream::operator>>(i64& value) const
 {
     value = Read<i64>();
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(f32& value) const
+inline ConstByteStream& ConstByteStream::operator>>(f32& value) const
 {
     value = Read<f32>();
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(f64& value) const
+inline ConstByteStream& ConstByteStream::operator>>(f64& value) const
 {
     value = Read<f64>();
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 
-inline ConstByteBuffer& ConstByteBuffer::operator>>(std::string& value) const
+inline ConstByteStream& ConstByteStream::operator>>(std::string& value) const
 {
     value = Read<std::string>();
-    return *const_cast<ConstByteBuffer*>(this);
+    return *const_cast<ConstByteStream*>(this);
 }
 }
