@@ -5,8 +5,10 @@
 
 namespace skymarlin::network
 {
-Listener::Listener(boost::asio::io_context& io_context, const unsigned short port)
-    : io_context_(io_context), acceptor_(io_context, tcp::endpoint(tcp::v6(), port)) {}
+Listener::Listener(boost::asio::io_context& io_context, const unsigned short port, SessionFactory&& session_factory)
+    : io_context_(io_context),
+    acceptor_(io_context, tcp::endpoint(tcp::v6(), port)),
+    session_factory_(std::move(session_factory)) {}
 
 void Listener::Start()
 {
@@ -40,6 +42,11 @@ boost::asio::awaitable<void> Listener::Listen()
         }
 
         auto session = session_factory_(io_context_, std::move(socket));
+        if (!session) {
+            SKYMARLIN_LOG_ERROR("Failed to create session after accepting");
+            co_return;
+        }
+
         session->Open();
         SessionManager::AddSession(session);
     }

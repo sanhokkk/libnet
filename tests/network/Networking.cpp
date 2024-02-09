@@ -5,10 +5,10 @@
 
 #include <boost/asio.hpp>
 #include <skymarlin/network/Client.hpp>
-#include <skymarlin/network/Listener.hpp>
 #include <skymarlin/network/PacketResolver.hpp>
 #include <skymarlin/network/Server.hpp>
 #include <skymarlin/network/Session.hpp>
+#include <skymarlin/utility/Log.hpp>
 #include <skymarlin/utility/MutableByteBuffer.hpp>
 
 namespace skymarlin::network::test
@@ -19,7 +19,7 @@ public:
     TestPacket() = default;
 
     explicit TestPacket(const u32 user_id)
-        :user_id_(user_id) {}
+        : user_id_(user_id) {}
 
     void Serialize(byte* dest) const override
     {
@@ -36,17 +36,12 @@ public:
     void Handle(std::shared_ptr<Session> session) override
     {
         SKYMARLIN_LOG_INFO("Handling TestPacket");
+        // session->Close();
     }
 
-    PacketLength length() const override
-    {
-        return sizeof(decltype(user_id_));
-    }
+    PacketLength length() const override { return sizeof(decltype(user_id_)); }
 
-    PacketHeader header() const override
-    {
-        return {.length = this->length(), .type = Type, .dummy = 0};
-    }
+    PacketHeader header() const override { return {.length = this->length(), .type = Type, .dummy = 0}; }
 
     constexpr static PacketType Type = 77;
 
@@ -64,49 +59,64 @@ public:
     }
 
 protected:
-    void OnClose() override {}
+    void OnOpen() override
+    {
+        auto hello_packet = std::make_unique<TestPacket>(42);
+        SendPacket(std::move(hello_packet));
+    }
+
+    void OnClose() override
+    {
+        SKYMARLIN_LOG_INFO("Session closed on {}:{}", local_endpoint().address().to_string(), local_endpoint().port());
+    }
 };
 
 class TestServer final : public Server, std::enable_shared_from_this<TestServer>
 {
 public:
     explicit TestServer(ServerConfig&& config)
-        : Server(std::move(config)) {}
+        : Server(std::move(config), MakeSessionFactory()) {}
 
     ~TestServer() override = default;
 
-    std::mutex stopped_mtx;
-    std::condition_variable stopped_cv;
-    bool stopped {false};
+private:
+    static SessionFactory MakeSessionFactory()
+    {
+        return [](boost::asio::io_context& io_context, tcp::socket&& socket) {
+            return std::make_shared<TestSession>(io_context, std::move(socket));
+        };
+    }
 };
 
 class TestClient final : public Client
 {
 public:
     explicit TestClient(ClientConfig&& config)
-        : Client(std::move(config)) {}
+        : Client(std::move(config), MakeSessionFactory()) {}
 
     ~TestClient() override = default;
 
-    void OnConnect(tcp::socket&& socket) override
+private:
+    static SessionFactory MakeSessionFactory()
     {
-        session_ = std::make_shared<TestSession>(io_context_, std::move(socket));
-        session_->Open();
+        return [](boost::asio::io_context& io_context, tcp::socket&& socket) {
+            return std::make_shared<TestSession>(io_context, std::move(socket));
+        };
     }
-
-    void OnStop() override
-    {
-        {
-            std::lock_guard lock(stopped_mtx);
-            stopped = true;
-        }
-        stopped_cv.notify_one();
-    }
-
-    std::mutex stopped_mtx;
-    std::condition_variable stopped_cv;
-    bool stopped {false};
 };
+
+TEST(Networking, StartAndStopServer)
+{
+    auto server = TestServer({33333});
+    std::thread server_thread([&server] {
+        server.Start();
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    server.Stop();
+
+    server_thread.join();
+}
 
 TEST(Networking, Connection)
 {
@@ -119,26 +129,21 @@ TEST(Networking, Connection)
     };
     PacketResolver::Register(make_packet_factories());
 
-    auto make_server_config = [] {
-        return ServerConfig {
-            .listen_port = port
-        };
-    };
-    auto server = TestServer(make_server_config());
-    server.Start();
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    auto server = TestServer({port});
+    std::thread server_thread([&server] {
+        server.Start();
+    });
 
     auto client = TestClient({"localhost", port});
-    client.Start();
+    std::thread client_thread([&client] {
+        client.Start();
+    });
 
-    {
-        std::unique_lock lock(client.stopped_mtx);
-        client.stopped_cv.wait(lock, [&client] { return client.stopped; });
-    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    server.Stop();
+    client.Stop();
 
-    {
-        std::unique_lock lock(server.stopped_mtx);
-        server.stopped_cv.wait(lock, [&server] { return server.stopped; });
-    }
+    server_thread.join();
+    client_thread.join();
 }
 }

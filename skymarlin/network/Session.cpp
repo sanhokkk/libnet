@@ -47,6 +47,8 @@ void Session::Open()
         SKYMARLIN_LOG_INFO("Session receive coroutine terminating");
     };
     co_spawn(io_context_, receive_coroutine(shared_from_this()), boost::asio::detached);
+
+    OnOpen();
 }
 
 void Session::Close()
@@ -67,21 +69,22 @@ void Session::SendPacket(std::unique_ptr<Packet> packet)
 {
     if (!packet) return;
 
-    const auto send_coroutine = [this](std::unique_ptr<Packet> _packet) -> boost::asio::awaitable<void> {
+    const auto send_coroutine = [](std::shared_ptr<Session> self,
+        std::unique_ptr<Packet> _packet) -> boost::asio::awaitable<void> {
         //TODO: buffer pooling?
         std::vector<byte> buffer(PACKET_HEADER_SIZE + _packet->length());
         Packet::WriteHeader(buffer.data(), _packet->header());
         _packet->Serialize(buffer.data() + PACKET_HEADER_SIZE);
 
-        const auto [ec, _] = co_await socket_.async_send(
+        const auto [ec, _] = co_await self->socket_.async_send(
             boost::asio::buffer(buffer), as_tuple(boost::asio::use_awaitable));
         if (ec) {
             SKYMARLIN_LOG_ERROR("Error on sending packet: {}", ec.what());
-            Close();
+            self->Close();
             co_return;
         }
     };
-    co_spawn(io_context_, send_coroutine(std::move(packet)), boost::asio::detached);
+    co_spawn(io_context_, send_coroutine(shared_from_this(), std::move(packet)), boost::asio::detached);
 }
 
 
@@ -115,15 +118,15 @@ boost::asio::awaitable<PacketHeader> Session::ReadPacketHeader()
         co_await socket_.async_receive(boost::asio::buffer(header_buffer_), as_tuple(boost::asio::use_awaitable));
 
     if (ec) {
-        SKYMARLIN_LOG_ERROR("Error on reading packet header: {}", ec.what());
+        SKYMARLIN_LOG_ERROR("Error on receiving packet header: {}", ec.what());
         co_return PacketHeader {};
     }
 
     co_return Packet::ReadHeader(header_buffer_);
 }
 
-boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReadPacketBody(std::unique_ptr<Packet> packet,
-    PacketLength length)
+boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReadPacketBody(
+    std::unique_ptr<Packet> packet, const PacketLength length)
 {
     //TODO: buffer pooling?
     std::vector<byte> buffer(length);
@@ -132,7 +135,7 @@ boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReadPacketBody(std::uni
         co_await socket_.async_receive(boost::asio::buffer(buffer), as_tuple(boost::asio::use_awaitable));
 
     if (ec) {
-        SKYMARLIN_LOG_ERROR("Error on reading packet body: {}", ec.what());
+        SKYMARLIN_LOG_ERROR("Error on receiving packet body: {}", ec.what());
         co_return nullptr;
     }
 

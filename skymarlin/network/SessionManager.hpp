@@ -15,7 +15,7 @@ public:
     static std::shared_ptr<Session> GetSession(SessionId id);
 
 private:
-    static thread::ConcurrentMap<SessionId, std::shared_ptr<Session>> sessions_;
+    inline static thread::ConcurrentMap<SessionId, std::shared_ptr<Session>> sessions_;
 };
 
 

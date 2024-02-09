@@ -29,6 +29,7 @@ public:
     tcp::endpoint remote_endpoint() const { return socket_.remote_endpoint(); }
 
 protected:
+    virtual void OnOpen() = 0;
     virtual void OnClose() = 0;
 
     boost::asio::io_context& io_context_;
