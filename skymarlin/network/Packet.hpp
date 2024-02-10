@@ -33,7 +33,7 @@ namespace skymarlin::network
 {
 using PacketLength = u16; // Exclude header length
 using PacketType = u8;
-// Reserve u8 for crypto type
+using PacketCrypto = u8;
 
 constexpr static size_t PACKET_HEADER_SIZE = sizeof(PacketLength) + sizeof(PacketType);
 
@@ -44,7 +44,7 @@ struct PacketHeader
 {
     PacketLength length {0};
     PacketType type {INVALID_PACKET_TYPE};
-    u8 dummy {0};
+    PacketCrypto crypto {0};
 
     explicit operator bool() const { return type != INVALID_PACKET_TYPE; }
 
@@ -57,15 +57,15 @@ class Packet : boost::noncopyable
 public:
     virtual ~Packet() = default;
 
-    virtual void Serialize(byte* dest) const = 0;
-    virtual void Deserialize(byte* src) = 0;
+    virtual bool Serialize(byte* dest, size_t size) const = 0;
+    virtual bool Deserialize(const byte* src, size_t size) = 0;
     virtual void Handle(std::shared_ptr<Session> session) = 0;
 
     virtual PacketLength length() const = 0;
     virtual PacketHeader header() const = 0;
 
     static PacketHeader ReadHeader(byte* src);
-    static void WriteHeader(byte* dest, const PacketHeader& header);
+    static void WriteHeader(byte* dest, const PacketHeader& src);
 };
 
 
@@ -80,23 +80,23 @@ inline PacketHeader Packet::ReadHeader(byte* src)
     header.type = utility::BitConverter::Convert<PacketType>(src + pos);
     pos += sizeof(PacketType);
 
-    header.dummy = utility::BitConverter::Convert<u8>(src + pos);
-    // pos += sizeof(u8);
+    header.crypto = utility::BitConverter::Convert<PacketCrypto>(src + pos);
+    // pos += sizeof(PacketCrypto);
 
     return header;
 }
 
-inline void Packet::WriteHeader(byte* dest, const PacketHeader& header)
+inline void Packet::WriteHeader(byte* dest, const PacketHeader& src)
 {
     size_t pos {0};
 
-    utility::BitConverter::Convert<PacketLength>(header.length, dest + pos);
+    utility::BitConverter::Convert<PacketLength>(src.length, dest + pos);
     pos += sizeof(PacketLength);
 
-    utility::BitConverter::Convert<PacketType>(header.type, dest + pos);
+    utility::BitConverter::Convert<PacketType>(src.type, dest + pos);
     pos += sizeof(PacketType);
 
-    utility::BitConverter::Convert<PacketType>(header.dummy, dest + pos);
-    // pos += sizeof(u8);
+    utility::BitConverter::Convert<PacketCrypto>(src.crypto, dest + pos);
+    // pos += sizeof(PacketCrypto);
 }
 }

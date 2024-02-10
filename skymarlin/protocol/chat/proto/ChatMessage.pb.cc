@@ -29,7 +29,7 @@ inline constexpr ChatMessage::Impl_::Impl_(
       : message_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        client_id_{0},
+        client_id_{0u},
         _cached_size_{0} {}
 
 template <typename>
@@ -77,7 +77,7 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_ChatMessage_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
     "\n\021ChatMessage.proto\022\027skymarlin.protocol."
-    "chat\"1\n\013ChatMessage\022\021\n\tclient_id\030\001 \001(\005\022\017"
+    "chat\"1\n\013ChatMessage\022\021\n\tclient_id\030\001 \001(\r\022\017"
     "\n\007message\030\002 \001(\tb\006proto3"
 };
 static ::absl::once_flag descriptor_table_ChatMessage_2eproto_once;
@@ -178,7 +178,7 @@ PROTOBUF_NOINLINE void ChatMessage::Clear() {
   (void) cached_has_bits;
 
   _impl_.message_.ClearToEmpty();
-  _impl_.client_id_ = 0;
+  _impl_.client_id_ = 0u;
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -207,15 +207,15 @@ const ::_pbi::TcParseTable<1, 2, 0, 51, 2> ChatMessage::_table_ = {
     // string message = 2;
     {::_pbi::TcParser::FastUS1,
      {18, 63, 0, PROTOBUF_FIELD_OFFSET(ChatMessage, _impl_.message_)}},
-    // int32 client_id = 1;
+    // uint32 client_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChatMessage, _impl_.client_id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(ChatMessage, _impl_.client_id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // int32 client_id = 1;
+    // uint32 client_id = 1;
     {PROTOBUF_FIELD_OFFSET(ChatMessage, _impl_.client_id_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // string message = 2;
     {PROTOBUF_FIELD_OFFSET(ChatMessage, _impl_.message_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
@@ -235,11 +235,11 @@ const ::_pbi::TcParseTable<1, 2, 0, 51, 2> ChatMessage::_table_ = {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // int32 client_id = 1;
+  // uint32 client_id = 1;
   if (this->_internal_client_id() != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::
-        WriteInt32ToArrayWithField<1>(
-            stream, this->_internal_client_id(), target);
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        1, this->_internal_client_id(), target);
   }
 
   // string message = 2;
@@ -273,9 +273,9 @@ const ::_pbi::TcParseTable<1, 2, 0, 51, 2> ChatMessage::_table_ = {
                                     this->_internal_message());
   }
 
-  // int32 client_id = 1;
+  // uint32 client_id = 1;
   if (this->_internal_client_id() != 0) {
-    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_client_id());
   }
 

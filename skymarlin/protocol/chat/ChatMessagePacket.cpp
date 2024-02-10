@@ -22,28 +22,39 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include <skymarlin/protocol/chat/ChatMessagePacket.hpp>
 
-#include <skymarlin/network/Packet.hpp>
-#include <skymarlin/protocol/chat/proto/ChatMessage.pb.h>
+#include <skymarlin/network/Session.hpp>
+#include <skymarlin/protocol/chat/ChatPackets.hpp>
+#include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::protocol::chat
 {
-class ChatMessagePacket final : public network::Packet
+ChatMessagePacket::ChatMessagePacket(const u32 client_id, std::string_view message)
 {
-public:
-    ChatMessagePacket() = default;
-    ChatMessagePacket(u32 client_id, std::string_view message);
-    ~ChatMessagePacket() override = default;
+    chat_message_.set_client_id(client_id);
+    chat_message_.set_message(message);
+}
 
-    bool Serialize(byte* dest, size_t size) const override;
-    bool Deserialize(const byte* src, size_t size) override;
-    void Handle(std::shared_ptr<network::Session> session) override;
+bool ChatMessagePacket::Serialize(byte* dest, const size_t size) const
+{
+    return chat_message_.SerializeToArray(dest, static_cast<int>(size));
+}
 
-    network::PacketLength length() const override;
-    network::PacketHeader header() const override;
+bool ChatMessagePacket::Deserialize(const byte* src, const size_t size)
+{
+    return chat_message_.ParseFromArray(src, static_cast<int>(size));
+}
 
-private:
-    ChatMessage chat_message_ {};
-};
+void ChatMessagePacket::Handle(const std::shared_ptr<network::Session> session)
+{
+    SKYMARLIN_LOG_INFO("[Message] {} : {}", session->id(), chat_message_.message());
+}
+
+PacketLength ChatMessagePacket::length() const { return chat_message_.ByteSizeLong(); }
+
+network::PacketHeader ChatMessagePacket::header() const
+{
+    return {.length = length(), .type = static_cast<PacketType>(ChatPacketType::ChatMessagePacket), .crypto = 0};
+}
 }

@@ -22,28 +22,17 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include <gtest/gtest.h>
+#include <skymarlin/protocol/chat/ChatPackets.hpp>
 
-#include <skymarlin/network/Packet.hpp>
-#include <skymarlin/protocol/chat/proto/ChatMessage.pb.h>
-
-namespace skymarlin::protocol::chat
+namespace skymarlin::network::test
 {
-class ChatMessagePacket final : public network::Packet
+TEST(ChatPackets, Register)
 {
-public:
-    ChatMessagePacket() = default;
-    ChatMessagePacket(u32 client_id, std::string_view message);
-    ~ChatMessagePacket() override = default;
-
-    bool Serialize(byte* dest, size_t size) const override;
-    bool Deserialize(const byte* src, size_t size) override;
-    void Handle(std::shared_ptr<network::Session> session) override;
-
-    network::PacketLength length() const override;
-    network::PacketHeader header() const override;
-
-private:
-    ChatMessage chat_message_ {};
-};
+    PacketResolver::Register(protocol::chat::MakeChatPacketFactories());
+    if (!PacketResolver::Resolve(static_cast<PacketType>(protocol::chat::ChatPacketType::ChatMessagePacket))) {
+        FAIL();
+    }
 }
+}
+

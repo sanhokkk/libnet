@@ -45,19 +45,21 @@ public:
     explicit TestPacket(const u32 user_id)
         : user_id_(user_id) {}
 
-    void Serialize(byte* dest) const override
+    bool Serialize(byte* dest, const size_t) const override
     {
         utility::MutableByteStream buffer(dest, length());
         buffer << user_id_;
+        return true;
     };
 
-    void Deserialize(byte* src) override
+    bool Deserialize(const byte* src, const size_t) override
     {
-        const utility::ConstByteStream buffer(src, length());
+        const utility::ConstByteStream buffer(const_cast<byte*>(src), length());
         buffer >> user_id_;
+        return true;
     };
 
-    void Handle(std::shared_ptr<Session> session) override
+    void Handle(std::shared_ptr<Session>) override
     {
         SKYMARLIN_LOG_INFO("Handling TestPacket");
         // session->Close();
@@ -65,7 +67,7 @@ public:
 
     PacketLength length() const override { return sizeof(decltype(user_id_)); }
 
-    PacketHeader header() const override { return {.length = this->length(), .type = Type, .dummy = 0}; }
+    PacketHeader header() const override { return {.length = this->length(), .type = Type, .crypto = 0}; }
 
     constexpr static PacketType Type = 77;
 

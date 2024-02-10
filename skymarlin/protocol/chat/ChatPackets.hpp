@@ -32,20 +32,18 @@ namespace skymarlin::protocol::chat
 {
 using network::PacketLength;
 using network::PacketType;
-using network::PacketCreator;
+using network::PacketFactory;
 
 enum class ChatPacketType : PacketType
 {
     ChatMessagePacket = 0x01,
 };
 
-inline std::vector<std::pair<PacketType, PacketCreator>> GetChatPacketCreators()
+static std::vector<std::pair<PacketType, PacketFactory>> MakeChatPacketFactories()
 {
+    using network::PacketResolver;
     return {
-        {
-            static_cast<PacketType>(ChatPacketType::ChatMessagePacket),
-            [] { return std::make_shared<ChatMessagePacket>(); }
-        },
+        PacketResolver::MakePacketFactory<ChatMessagePacket>(static_cast<PacketType>(ChatPacketType::ChatMessagePacket)),
     };
 }
 }

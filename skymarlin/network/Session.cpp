@@ -86,8 +86,14 @@ void Session::SendPacket(std::unique_ptr<Packet> packet)
         std::unique_ptr<Packet> _packet) -> boost::asio::awaitable<void> {
         //TODO: buffer pooling?
         std::vector<byte> buffer(PACKET_HEADER_SIZE + _packet->length());
-        Packet::WriteHeader(buffer.data(), _packet->header());
-        _packet->Serialize(buffer.data() + PACKET_HEADER_SIZE);
+        PacketHeader header = _packet->header();
+
+        Packet::WriteHeader(buffer.data(), header);
+        if (!_packet->Serialize(buffer.data() + PACKET_HEADER_SIZE, header.length)) {
+            SKYMARLIN_LOG_ERROR("Failed to serialize packet body");
+            self->Close();
+            co_return;
+        }
 
         const auto [ec, _] = co_await self->socket_.async_send(
             boost::asio::buffer(buffer), as_tuple(boost::asio::use_awaitable));
@@ -145,17 +151,13 @@ boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReadPacketBody(
 
     const auto [ec, _] =
         co_await socket_.async_receive(boost::asio::buffer(buffer), as_tuple(boost::asio::use_awaitable));
-
     if (ec) {
         SKYMARLIN_LOG_ERROR("Error on receiving packet body: {}", ec.what());
         co_return nullptr;
     }
 
-    try {
-        packet->Deserialize(buffer.data());
-    }
-    catch (const std::exception& e) {
-        SKYMARLIN_LOG_ERROR("Error on deserializing packet: {}", e.what());
+    if (!packet->Deserialize(buffer.data(), length)) {
+        SKYMARLIN_LOG_ERROR("Failed to deserialize packet body");
         co_return nullptr;
     }
 

@@ -2,6 +2,7 @@ project(
     'libnetwork',
     'cpp',
     version : '0.0.1',
+    license: 'skymarlin',
     default_options : ['cpp_std=c++20', 'warning_level=3']
 )
 
@@ -13,11 +14,17 @@ project_sources = [
     'skymarlin/network/Session.cpp',
 
     # protocol
+    ## chat
+    'skymarlin/protocol/chat/ChatMessagePacket.cpp',
     'skymarlin/protocol/chat/proto/ChatMessage.pb.cc',
 ]
 
 project_tests = [
     # Unit Tests
+    ## protocol
+    'skymarlin/protocol/chat/ChatPackets.test.cpp',
+
+    ## utility
     'skymarlin/utility/MutableByteStream.test.cpp',
     'skymarlin/utility/BitConverter.test.cpp',
 
@@ -30,11 +37,10 @@ build_args = [
     '-DPROJECT_VERSION=' + meson.project_version(),
 ]
 
-### Target ###
-#TODO: Compile proto defs to classes.
 
-protobuf_dep = dependency('protobuf')
+### Target ###
 absl_base_dep = dependency('absl_base')
+protobuf_dep = dependency('protobuf', modules: ['protobuf::libprotobuf'])
 spdlog_dep = dependency('spdlog')
 libthread_dep = dependency('libthread', fallback : ['libthread', 'libthread_dep'])
 
