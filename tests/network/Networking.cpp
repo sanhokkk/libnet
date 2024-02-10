@@ -91,7 +91,7 @@ protected:
 
     void OnClose() override
     {
-        SKYMARLIN_LOG_INFO("Session closed on {}:{}", local_endpoint().address().to_string(), local_endpoint().port());
+        // SKYMARLIN_LOG_INFO("Session closed on {}:{}", local_endpoint().address().to_string(), local_endpoint().port());
     }
 };
 

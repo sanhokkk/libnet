@@ -48,7 +48,7 @@ void Server::Stop()
     running_ = false;
 
     listener_.Stop();
-    //TODO: Close all sessions
+    SessionManager::ClearSessions();
 
     io_context_.stop();
 }

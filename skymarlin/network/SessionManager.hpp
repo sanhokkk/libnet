@@ -37,14 +37,17 @@ public:
     static void RemoveSession(const std::shared_ptr<Session>& session);
     static void RemoveSession(SessionId id);
     static std::shared_ptr<Session> GetSession(SessionId id);
+    static void ClearSessions();
 
 private:
     inline static thread::ConcurrentMap<SessionId, std::shared_ptr<Session>> sessions_;
+    inline static std::atomic<SessionId> id_generator {0};
 };
 
 
 inline void SessionManager::AddSession(const std::shared_ptr<Session>& session)
 {
+    session->set_id(++id_generator);
     sessions_[session->id()] = session;
 }
 
@@ -73,4 +76,10 @@ inline std::shared_ptr<Session> SessionManager::GetSession(SessionId id)
     }
     return sessions_[id];
 }
+
+inline void SessionManager::ClearSessions()
+{
+    sessions_.Clear();
+}
+
 }

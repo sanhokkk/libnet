@@ -25,7 +25,6 @@
 #include <skymarlin/network/Session.hpp>
 
 #include <skymarlin/network/PacketResolver.hpp>
-#include <skymarlin/network/SessionManager.hpp>
 #include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::network
@@ -43,7 +42,6 @@ Session::Session(boost::asio::io_context& io_context, tcp::socket&& socket)
 
 Session::~Session()
 {
-    SKYMARLIN_LOG_INFO("Session destructor");
     Close();
 }
 

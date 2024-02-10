@@ -48,6 +48,7 @@ public:
     void SendPacket(std::unique_ptr<Packet> packet);
 
     SessionId id() const { return id_; }
+    void set_id(const SessionId id) { id_ = id; }
     bool open() const { return !closed_ && !closing_; };
     tcp::endpoint local_endpoint() const { return socket_.local_endpoint(); }
     tcp::endpoint remote_endpoint() const { return socket_.remote_endpoint(); }
