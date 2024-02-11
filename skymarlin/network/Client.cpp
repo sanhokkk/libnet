@@ -28,8 +28,8 @@
 
 namespace skymarlin::network
 {
-Client::Client(ClientConfig&& config, SessionFactory&& session_factory)
-    : config_(std::move(config)), session_factory_(std::move(session_factory)) {}
+Client::Client(ClientConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory)
+    : config_(std::move(config)), io_context_(io_context), session_factory_(std::move(session_factory)) {}
 
 void Client::Start()
 {
@@ -42,13 +42,11 @@ void Client::Start()
 
             session_ = session_factory_(io_context_, std::move(*socket));
             session_->Open();
+
+            OnStart();
         },
         boost::asio::detached
     );
-
-    while (running_) {
-        io_context_.run();
-    }
 }
 
 void Client::Stop()
@@ -59,7 +57,6 @@ void Client::Stop()
     running_ = false;
 
     if (session_) session_->Close();
-    io_context_.stop();
 }
 
 boost::asio::awaitable<std::optional<tcp::socket>> Client::Connect()

@@ -38,7 +38,7 @@ struct ServerConfig
 class Server : boost::noncopyable
 {
 public:
-    Server(ServerConfig&& config, SessionFactory&& session_factory);
+    Server(ServerConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory);
     virtual ~Server() = default;
 
     void Start();
@@ -48,7 +48,7 @@ public:
 
 protected:
     const ServerConfig config_;
-    boost::asio::io_context io_context_ {};
+    boost::asio::io_context& io_context_;
 
 private:
     Listener listener_;

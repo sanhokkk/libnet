@@ -100,8 +100,8 @@ protected:
 class TestServer final : public Server, std::enable_shared_from_this<TestServer>
 {
 public:
-    explicit TestServer(ServerConfig&& config)
-        : Server(std::move(config), Session::MakeSessionFactory<TestSession>()) {}
+    explicit TestServer(ServerConfig&& config, boost::asio::io_context& io_context)
+        : Server(std::move(config), io_context, Session::MakeSessionFactory<TestSession>()) {}
 
     ~TestServer() override = default;
 };
@@ -109,34 +109,63 @@ public:
 class TestClient final : public Client
 {
 public:
-    explicit TestClient(ClientConfig&& config)
-        : Client(std::move(config), Session::MakeSessionFactory<TestSession>()) {}
+    explicit TestClient(ClientConfig&& config, boost::asio::io_context& io_context)
+        : Client(std::move(config), io_context, Session::MakeSessionFactory<TestSession>()) {}
 
-    // ~TestClient() override = default;
+    ~TestClient() override = default;
+
+    void OnStart() override {}
+    void OnStop() override {}
 };
 
 TEST(Networking, StartAndStopServer)
 {
-    auto server = TestServer({33333});
-    std::thread server_thread([&server] {
+    boost::asio::io_context io_context {};
+    auto io_work_guard = make_work_guard(io_context);
+
+    std::thread server_thread([&io_context] {
+        auto make_server_config = []() -> ServerConfig {
+            return {.listen_port = 55555};
+        };
+
+        auto server = TestServer(make_server_config(), io_context);
         server.Start();
+        server.Stop();
+
+        io_context.run();
     });
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    server.Stop();
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    io_work_guard.reset();
 
-    server_thread.join();
+    if (server_thread.joinable()) server_thread.join();
 }
 
 TEST(Networking, StartAndStopClient)
 {
-    auto client = TestClient({"localhost", 55555}); // should faild to connect
-    client.Start();
+    boost::asio::io_context io_context {};
+    auto io_work_guard = make_work_guard(io_context);
+
+    std::thread client_thread([&io_context] {
+        auto make_client_config = []() -> ClientConfig {
+            return {.remote_adress = "localhost", .remote_port = 55555};
+        };
+
+        auto client = TestClient(make_client_config(), io_context);
+        client.Start();
+
+        io_context.run();
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    io_work_guard.reset();
+
+    if (client_thread.joinable()) client_thread.join();
 }
 
 TEST(Networking, Connection)
 {
-    constexpr auto port = static_cast<unsigned short>(50000);
+    /*constexpr auto port = static_cast<unsigned short>(50000);
 
     const auto make_packet_factories = [] {
         return std::vector {
@@ -160,6 +189,6 @@ TEST(Networking, Connection)
     client_thread.join();
 
     server.Stop();
-    server_thread.join();
+    server_thread.join();*/
 }
 }

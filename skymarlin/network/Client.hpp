@@ -43,11 +43,14 @@ struct ClientConfig
 class Client : boost::noncopyable
 {
 public:
-    explicit Client(ClientConfig&& config, SessionFactory&& session_factory);
+    Client(ClientConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory);
     virtual ~Client() = default;
 
     void Start();
     void Stop();
+
+    virtual void OnStart() = 0;
+    virtual void OnStop() = 0;
 
     bool running() const { return running_; }
 
@@ -56,7 +59,7 @@ private:
 
 protected:
     const ClientConfig config_;
-    boost::asio::io_context io_context_ {};
+    boost::asio::io_context& io_context_;
     std::shared_ptr<Session> session_;
 
 private:

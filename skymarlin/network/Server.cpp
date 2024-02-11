@@ -29,17 +29,13 @@
 
 namespace skymarlin::network
 {
-Server::Server(ServerConfig&& config, SessionFactory&& session_factory)
-    : config_(std::move(config)), listener_(io_context_, config.listen_port, std::move(session_factory)) {}
+Server::Server(ServerConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory)
+    : config_(std::move(config)), io_context_(io_context), listener_(io_context_, config.listen_port, std::move(session_factory)) {}
 
 void Server::Start()
 {
     running_ = true;
     listener_.Start();
-
-    while (running_) {
-        io_context_.run();
-    }
 }
 
 void Server::Stop()
@@ -49,7 +45,5 @@ void Server::Stop()
 
     listener_.Stop();
     SessionManager::ClearSessions();
-
-    io_context_.stop();
 }
 }
