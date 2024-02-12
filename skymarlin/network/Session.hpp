@@ -46,14 +46,13 @@ public:
     void Open();
     void Close();
     void SendPacket(std::shared_ptr<Packet> packet);
+    void BroadcastPacket(std::shared_ptr<Packet> packet);
 
     SessionId id() const { return id_; }
     void set_id(const SessionId id) { id_ = id; }
     bool open() const { return !closed_ && !closing_; };
     tcp::endpoint local_endpoint() const { return socket_.local_endpoint(); }
     tcp::endpoint remote_endpoint() const { return socket_.remote_endpoint(); }
-
-    static void BroadcastPacket(std::shared_ptr<Packet> packet);
 
     template<typename SessionType> requires std::is_base_of_v<Session, SessionType>
     static SessionFactory MakeSessionFactory();

@@ -52,7 +52,7 @@ struct PacketHeader
 };
 
 
-class Packet : boost::noncopyable
+class Packet : public std::enable_shared_from_this<Packet>, boost::noncopyable
 {
 public:
     virtual ~Packet() = default;

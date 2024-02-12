@@ -49,6 +49,7 @@ bool ChatMessagePacket::Deserialize(const byte* src, const size_t size)
 void ChatMessagePacket::Handle(const std::shared_ptr<network::Session> session)
 {
     SKYMARLIN_LOG_INFO("[Message] {} : {}", session->id(), chat_message_.message());
+    session->BroadcastPacket(shared_from_this());
 }
 
 PacketLength ChatMessagePacket::length() const { return chat_message_.ByteSizeLong(); }
