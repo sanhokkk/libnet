@@ -25,6 +25,7 @@
 #include <skymarlin/network/Session.hpp>
 
 #include <skymarlin/network/PacketResolver.hpp>
+#include <skymarlin/network/SessionManager.hpp>
 #include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::network
@@ -52,11 +53,10 @@ void Session::Open()
 
     const auto receive_coroutine = [](std::shared_ptr<Session> self) -> boost::asio::awaitable<void> {
         while (self->open()) {
-            if (auto packet = co_await self->ReceivePacket()) {
+            if (auto packet = co_await self->ReceivePacket(); packet) {
                 packet->Handle(self->shared_from_this());
             }
         }
-        SKYMARLIN_LOG_INFO("Session receive coroutine terminating");
     };
     co_spawn(io_context_, receive_coroutine(shared_from_this()), boost::asio::detached);
 
@@ -78,12 +78,12 @@ void Session::Close()
     OnClose();
 }
 
-void Session::SendPacket(std::unique_ptr<Packet> packet)
+void Session::SendPacket(std::shared_ptr<Packet> packet)
 {
     if (!packet) return;
 
-    const auto send_coroutine = [](std::shared_ptr<Session> self,
-        std::unique_ptr<Packet> _packet) -> boost::asio::awaitable<void> {
+    const auto send_coroutine = [](std::shared_ptr<Session> self, std::shared_ptr<Packet> _packet)
+        -> boost::asio::awaitable<void> {
         //TODO: buffer pooling?
         std::vector<byte> buffer(PACKET_HEADER_SIZE + _packet->length());
         PacketHeader header = _packet->header();
@@ -106,7 +106,14 @@ void Session::SendPacket(std::unique_ptr<Packet> packet)
     co_spawn(io_context_, send_coroutine(shared_from_this(), std::move(packet)), boost::asio::detached);
 }
 
-boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReceivePacket()
+void Session::BroadcastPacket(std::shared_ptr<Packet> packet)
+{
+    SessionManager::ForEachSession([packet = std::move(packet)](const std::shared_ptr<Session>& session) {
+        session->SendPacket(packet);
+    });
+}
+
+boost::asio::awaitable<std::shared_ptr<Packet>> Session::ReceivePacket()
 {
     const PacketHeader header = co_await ReadPacketHeader();
     if (!header) {
@@ -114,7 +121,7 @@ boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReceivePacket()
         co_return nullptr;
     }
 
-    std::unique_ptr<Packet> packet = PacketResolver::Resolve(header.type);
+    std::shared_ptr<Packet> packet = PacketResolver::Resolve(header.type);
     if (!packet) {
         SKYMARLIN_LOG_ERROR("Invalid packet type: {}", header.type);
         Close();
@@ -143,8 +150,8 @@ boost::asio::awaitable<PacketHeader> Session::ReadPacketHeader()
     co_return Packet::ReadHeader(header_buffer_);
 }
 
-boost::asio::awaitable<std::unique_ptr<Packet>> Session::ReadPacketBody(
-    std::unique_ptr<Packet> packet, const PacketLength length)
+boost::asio::awaitable<std::shared_ptr<Packet>> Session::ReadPacketBody(
+    std::shared_ptr<Packet> packet, const PacketLength length)
 {
     //TODO: buffer pooling?
     std::vector<byte> buffer(length);

@@ -39,6 +39,9 @@ public:
     static std::shared_ptr<Session> GetSession(SessionId id);
     static void ClearSessions();
 
+    template<typename... Args>
+    static void ForEachSession(std::function<void(std::shared_ptr<Session>&)>&& function, Args&&... args);
+
 private:
     inline static thread::ConcurrentMap<SessionId, std::shared_ptr<Session>> sessions_;
     inline static std::atomic<SessionId> id_generator {0};
@@ -48,7 +51,7 @@ private:
 inline void SessionManager::AddSession(const std::shared_ptr<Session>& session)
 {
     session->set_id(++id_generator);
-    sessions_[session->id()] = session;
+    sessions_.InsertOrAssign(session->id(), session);
 }
 
 inline void SessionManager::RemoveSession(const std::shared_ptr<Session>& session)
@@ -60,7 +63,7 @@ inline void SessionManager::RemoveSession(const std::shared_ptr<Session>& sessio
     sessions_.Erase(session->id());
 }
 
-inline void SessionManager::RemoveSession(SessionId id)
+inline void SessionManager::RemoveSession(const SessionId id)
 {
     if (!sessions_.Contains(id)) {
         SKYMARLIN_LOG_ERROR("Removing un-added session with id({})", id);
@@ -69,17 +72,24 @@ inline void SessionManager::RemoveSession(SessionId id)
     sessions_.Erase(id);
 }
 
-inline std::shared_ptr<Session> SessionManager::GetSession(SessionId id)
+inline std::shared_ptr<Session> SessionManager::GetSession(const SessionId id)
 {
-    if (!sessions_.Contains(id)) {
+    std::shared_ptr<Session> session;
+    if (!sessions_.TryGet(id, session)) {
         return nullptr;
     }
-    return sessions_[id];
+    return session;
 }
 
 inline void SessionManager::ClearSessions()
 {
     sessions_.Clear();
+}
+
+template <typename ... Args>
+void SessionManager::ForEachSession(std::function<void(std::shared_ptr<Session>&)>&& function, Args&&... args)
+{
+    sessions_.ForEach(function, args...);
 }
 
 }

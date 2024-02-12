@@ -44,14 +44,16 @@ public:
     virtual ~Session();
 
     void Open();
-    void Close(); //TODO: Get error as parameter
-    void SendPacket(std::unique_ptr<Packet> packet);
+    void Close();
+    void SendPacket(std::shared_ptr<Packet> packet);
 
     SessionId id() const { return id_; }
     void set_id(const SessionId id) { id_ = id; }
     bool open() const { return !closed_ && !closing_; };
     tcp::endpoint local_endpoint() const { return socket_.local_endpoint(); }
     tcp::endpoint remote_endpoint() const { return socket_.remote_endpoint(); }
+
+    static void BroadcastPacket(std::shared_ptr<Packet> packet);
 
     template<typename SessionType> requires std::is_base_of_v<Session, SessionType>
     static SessionFactory MakeSessionFactory();
@@ -63,9 +65,9 @@ protected:
     boost::asio::io_context& io_context_;
 
 private:
-    boost::asio::awaitable<std::unique_ptr<Packet>> ReceivePacket();
+    boost::asio::awaitable<std::shared_ptr<Packet>> ReceivePacket();
     boost::asio::awaitable<PacketHeader> ReadPacketHeader();
-    boost::asio::awaitable<std::unique_ptr<Packet>> ReadPacketBody(std::unique_ptr<Packet> packet, PacketLength length);
+    boost::asio::awaitable<std::shared_ptr<Packet>> ReadPacketBody(std::shared_ptr<Packet> packet, PacketLength length);
 
     tcp::socket socket_;
     byte header_buffer_[PACKET_HEADER_SIZE] {};

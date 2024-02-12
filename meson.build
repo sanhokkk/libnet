@@ -2,7 +2,7 @@ project(
     'libnetwork',
     'cpp',
     version : '0.0.1',
-    license: 'skymarlin',
+    license: 'MIT',
     default_options : ['cpp_std=c++20', 'warning_level=3']
 )
 
@@ -38,7 +38,7 @@ build_args = [
 ]
 
 
-### Target ###
+### Project ###
 absl_base_dep = dependency('absl_base')
 protobuf_dep = dependency('protobuf', modules: ['protobuf::libprotobuf'])
 spdlog_dep = dependency('spdlog')
@@ -52,12 +52,12 @@ project_dependencies = [
     spdlog_dep
 ]
 
-public_dependencies = [
-    libthread_dep,
-    protobuf_dep,
-    absl_base_dep,
-    spdlog_dep
-]
+#public_dependencies = [
+#    libthread_dep,
+#    protobuf_dep,
+#    absl_base_dep,
+#    spdlog_dep
+#]
 
 inc = include_directories('.')
 
@@ -67,25 +67,22 @@ project_target = static_library(
     cpp_args : build_args,
     include_directories : inc,
     dependencies : project_dependencies,
-    #  cpp_pch: 'pch/pch.hpp',
 )
 
-### Project ###
 project_dep = declare_dependency(
-    dependencies : public_dependencies,
+    dependencies : project_dependencies,
     include_directories : inc,
     link_with : project_target,
 )
 set_variable(meson.project_name() + '_dep', project_dep)
 
+
 ### Tests ###
 if meson.is_subproject() == false
     gtest_dep = dependency('gtest', main : true)
     test_exec = executable(
-        'run_tests',
-        files(project_tests),
+        'tests',
+        project_tests,
         dependencies : [project_dep, gtest_dep],
     )
-
-    test('all_tests', test_exec)
 endif

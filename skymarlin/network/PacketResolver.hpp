@@ -31,14 +31,14 @@
 
 namespace skymarlin::network
 {
-using PacketFactory = std::function<std::unique_ptr<Packet>()>;
+using PacketFactory = std::function<std::shared_ptr<Packet>()>;
 
 
 class PacketResolver final
 {
 public:
     static void Register(const std::vector<std::pair<PacketType, PacketFactory>>& factories);
-    static std::unique_ptr<Packet> Resolve(PacketType type);
+    static std::shared_ptr<Packet> Resolve(PacketType type);
 
     template <typename T> requires std::is_base_of_v<Packet, T>
     static std::pair<PacketType, PacketFactory> MakePacketFactory(PacketType type);
@@ -55,7 +55,7 @@ inline void PacketResolver::Register(const std::vector<std::pair<PacketType, Pac
     }
 }
 
-inline std::unique_ptr<Packet> PacketResolver::Resolve(const PacketType type)
+inline std::shared_ptr<Packet> PacketResolver::Resolve(const PacketType type)
 {
     if (!factory_map_.contains(type)) {
         return nullptr;
@@ -66,6 +66,6 @@ inline std::unique_ptr<Packet> PacketResolver::Resolve(const PacketType type)
 template <typename T> requires std::is_base_of_v<Packet, T>
 std::pair<PacketType, PacketFactory> PacketResolver::MakePacketFactory(PacketType type)
 {
-    return {type, [] { return std::make_unique<T>(); }};
+    return {type, [] { return std::make_shared<T>(); }};
 }
 }
