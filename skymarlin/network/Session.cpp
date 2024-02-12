@@ -75,6 +75,8 @@ void Session::Close()
         SKYMARLIN_LOG_ERROR("Error closing socket: {}", e.what());
     }
 
+    SessionManager::RemoveSession(shared_from_this());
+
     OnClose();
 }
 
