@@ -42,17 +42,15 @@ using PacketLength = uint16_t; // Exclude header length
 using PacketProtocol = uint16_t;
 using PacketFactory = std::function<std::shared_ptr<Packet>()>;
 
-constexpr static size_t PACKET_HEADER_SIZE = sizeof(PacketLength) + sizeof(PacketProtocol);
-
-
 struct PacketHeader
 {
     PacketLength length {0};
-    PacketProtocol protocol {INVALID_PACKET_PROTOCOL};
+    PacketProtocol protocol {InvalidProtocol};
 
-    explicit operator bool() const { return protocol != INVALID_PACKET_PROTOCOL; }
+    explicit operator bool() const { return protocol != InvalidProtocol; }
 
-    static constexpr PacketProtocol INVALID_PACKET_PROTOCOL = 0;
+    static constexpr size_t Size = sizeof(PacketLength) + sizeof(PacketProtocol);
+    static constexpr PacketProtocol InvalidProtocol = 0;
 };
 
 

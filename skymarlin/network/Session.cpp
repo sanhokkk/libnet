@@ -94,11 +94,11 @@ boost::asio::awaitable<void> Session::SendPacketQueue()
         const auto packet = send_queue_.Pop();
 
         //TODO: buffer pooling?
-        std::vector<byte> buffer(PACKET_HEADER_SIZE + packet->length());
+        std::vector<byte> buffer(PacketHeader::Size + packet->length());
         PacketHeader header = packet->header();
 
         Packet::WriteHeader(buffer.data(), header);
-        if (!packet->Serialize(buffer.data() + PACKET_HEADER_SIZE, header.length)) {
+        if (!packet->Serialize(buffer.data() + PacketHeader::Size, header.length)) {
             SKYMARLIN_LOG_ERROR("Failed to serialize packet body");
             co_await Close();
             co_return;

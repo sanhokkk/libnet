@@ -68,6 +68,16 @@ set_variable(meson.project_name() + '_dep', project_dep)
 
 ### Tests ###
 if meson.is_subproject() == false
+    conf_data = configuration_data(
+        {
+            'project_root' : meson.current_source_dir(),
+        }
+    )
+    configure_file(
+        input : 'tests/network/Config.tpp',
+        output : 'Config.hpp',
+        configuration : conf_data)
+
     gtest_dep = dependency('gtest', main : true)
     tests_exec = executable(
         'tests',

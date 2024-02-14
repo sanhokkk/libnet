@@ -72,7 +72,7 @@ private:
     boost::asio::awaitable<void> SendPacketQueue();
 
     Socket socket_;
-    byte header_buffer_[PACKET_HEADER_SIZE] {};
+    byte header_buffer_[PacketHeader::Size] {};
     thread::ConcurrentQueue<std::shared_ptr<Packet>> send_queue_ {};
     std::atomic<bool> send_queue_processing_ {false};
 

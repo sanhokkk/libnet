@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include <Config.hpp>
 #include <gtest/gtest.h>
 
 #include <chrono>
@@ -30,7 +31,6 @@
 #include <boost/asio.hpp>
 #include <skymarlin/network/Client.hpp>
 #include <skymarlin/network/Log.hpp>
-#include <skymarlin/network/PacketResolver.hpp>
 #include <skymarlin/network/Server.hpp>
 #include <skymarlin/network/Session.hpp>
 
@@ -81,8 +81,8 @@ TEST(Networking, StartAndStopServer)
         auto make_server_config = []() -> ServerConfig {
             return {
                 .listen_port = 55555,
-                .ssl_certificate_chain_file = "server.test.crt",
-                .ssl_private_key_file = "server.test.key",
+                .ssl_certificate_chain_file = std::format("{}/tests/network/server.test.crt", PROJECT_ROOT),
+                .ssl_private_key_file = std::format("{}/tests/network/server.test.key", PROJECT_ROOT)
             };
         };
 
