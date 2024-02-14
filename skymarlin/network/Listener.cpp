@@ -29,8 +29,10 @@
 
 namespace skymarlin::network
 {
-Listener::Listener(boost::asio::io_context& io_context, const unsigned short port, SessionFactory&& session_factory)
+Listener::Listener(boost::asio::io_context& io_context, boost::asio::ssl::context& ssl_context,
+    const unsigned short port, SessionFactory&& session_factory)
     : io_context_(io_context),
+    ssl_context_(ssl_context),
     acceptor_(io_context, tcp::endpoint(tcp::v6(), port)),
     session_factory_(std::move(session_factory)) {}
 
@@ -58,10 +60,17 @@ boost::asio::awaitable<void> Listener::Listen()
         acceptor_.local_endpoint().port());
 
     while (listening_) {
-        auto [ec, socket] = co_await acceptor_.async_accept(as_tuple(boost::asio::use_awaitable));
+        Socket socket(io_context_, ssl_context_);
 
-        if (ec) {
+        if (const auto [ec] = co_await acceptor_.async_accept(socket.lowest_layer(),
+            as_tuple(boost::asio::use_awaitable)); ec) {
             SKYMARLIN_LOG_ERROR("Error on accepting: {}", ec.what());
+            continue;
+        }
+
+        if (const auto [ec] = co_await socket.async_handshake(boost::asio::ssl::stream_base::server,
+            as_tuple(boost::asio::use_awaitable)); ec) {
+            SKYMARLIN_LOG_ERROR("Error on handshaking: {}", ec.what());
             continue;
         }
 

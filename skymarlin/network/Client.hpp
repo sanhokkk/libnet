@@ -25,6 +25,7 @@
 #pragma once
 
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 #include <boost/core/noncopyable.hpp>
 #include <skymarlin/network/Session.hpp>
 
@@ -55,11 +56,12 @@ public:
     bool running() const { return running_; }
 
 private:
-    boost::asio::awaitable<std::optional<tcp::socket>> Connect();
+    boost::asio::awaitable<void> Connect();
 
 protected:
     const ClientConfig config_;
     boost::asio::io_context& io_context_;
+    boost::asio::ssl::context ssl_context_ {boost::asio::ssl::context::tlsv13_client};
     std::shared_ptr<Session> session_;
 
 private:

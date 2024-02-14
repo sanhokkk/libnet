@@ -27,32 +27,34 @@
 #include <memory>
 
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 #include <boost/core/noncopyable.hpp>
 #include <skymarlin/network/Packet.hpp>
+#include <skymarlin/thread/Queue.hpp>
 
 namespace skymarlin::network
 {
 using boost::asio::ip::tcp;
-using SessionFactory = std::function<std::shared_ptr<Session>(boost::asio::io_context&, tcp::socket&&)>;
+using Socket = boost::asio::ssl::stream<tcp::socket>;
+using SessionFactory = std::function<std::shared_ptr<Session>(boost::asio::io_context&, Socket&&)>;
 using SessionId = u64;
-
 
 class Session : public std::enable_shared_from_this<Session>, boost::noncopyable
 {
 public:
-    Session(boost::asio::io_context& io_context, tcp::socket&& socket);
+    Session(boost::asio::io_context& io_context, Socket&& socket);
     virtual ~Session();
 
     void Open();
-    void Close();
+    boost::asio::awaitable<void> Close();
     void SendPacket(std::shared_ptr<Packet> packet);
     void BroadcastPacket(std::shared_ptr<Packet> packet);
 
     SessionId id() const { return id_; }
     void set_id(const SessionId id) { id_ = id; }
     bool open() const { return !closed_ && !closing_; };
-    tcp::endpoint local_endpoint() const { return socket_.local_endpoint(); }
-    tcp::endpoint remote_endpoint() const { return socket_.remote_endpoint(); }
+    tcp::endpoint local_endpoint() const { return socket_.lowest_layer().local_endpoint(); }
+    tcp::endpoint remote_endpoint() const { return socket_.lowest_layer().remote_endpoint(); }
 
     template<typename SessionType> requires std::is_base_of_v<Session, SessionType>
     static SessionFactory MakeSessionFactory();
@@ -67,9 +69,12 @@ private:
     boost::asio::awaitable<std::shared_ptr<Packet>> ReceivePacket();
     boost::asio::awaitable<PacketHeader> ReadPacketHeader();
     boost::asio::awaitable<std::shared_ptr<Packet>> ReadPacketBody(std::shared_ptr<Packet> packet, PacketLength length);
+    boost::asio::awaitable<void> SendPacketQueue();
 
-    tcp::socket socket_;
+    Socket socket_;
     byte header_buffer_[PACKET_HEADER_SIZE] {};
+    thread::ConcurrentQueue<std::shared_ptr<Packet>> send_queue_ {};
+    std::atomic<bool> send_queue_processing_ {false};
 
     SessionId id_ {0};
     std::atomic<bool> closed_ {true};
@@ -80,7 +85,7 @@ private:
 template <typename SessionType> requires std::is_base_of_v<Session, SessionType>
 SessionFactory Session::MakeSessionFactory()
 {
-    return [](boost::asio::io_context& io_context, tcp::socket&& socket) {
+    return [](boost::asio::io_context& io_context, Socket&& socket) {
         return std::make_shared<SessionType>(io_context, std::move(socket));
     };
 }

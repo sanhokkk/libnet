@@ -2,7 +2,7 @@ project(
     'libnetwork',
     'cpp',
     version : '0.0.1',
-    license: 'MIT',
+    license : 'MIT',
     default_options : ['cpp_std=c++20', 'warning_level=3']
 )
 
@@ -40,34 +40,23 @@ build_args = [
 
 
 ### Project ###
-absl_base_dep = dependency('absl_base')
-protobuf_dep = dependency('protobuf', modules: ['protobuf::libprotobuf'])
-spdlog_dep = dependency('spdlog')
-libthread_dep = dependency('libthread', fallback : ['libthread', 'libthread_dep'])
-
 project_dependencies = [
+    dependency('absl_base'), # Required by protobuf
     dependency('boost'),
-    libthread_dep,
-    protobuf_dep,
-    absl_base_dep,
-    spdlog_dep
+    dependency('openssl'),
+    dependency('protobuf', modules : ['protobuf::libprotobuf']),
+    dependency('spdlog'),
+
+    dependency('libthread', fallback : ['libthread', 'libthread_dep']),
 ]
-
-#public_dependencies = [
-#    libthread_dep,
-#    protobuf_dep,
-#    absl_base_dep,
-#    spdlog_dep
-#]
-
 inc = include_directories('.')
 
 project_target = static_library(
     meson.project_name(),
     project_sources,
     cpp_args : build_args,
-    include_directories : inc,
     dependencies : project_dependencies,
+    include_directories : inc,
 )
 
 project_dep = declare_dependency(
@@ -81,7 +70,7 @@ set_variable(meson.project_name() + '_dep', project_dep)
 ### Tests ###
 if meson.is_subproject() == false
     gtest_dep = dependency('gtest', main : true)
-    test_exec = executable(
+    tests_exec = executable(
         'tests',
         project_tests,
         dependencies : [project_dep, gtest_dep],

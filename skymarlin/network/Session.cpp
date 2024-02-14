@@ -30,11 +30,11 @@
 
 namespace skymarlin::network
 {
-Session::Session(boost::asio::io_context& io_context, tcp::socket&& socket)
+Session::Session(boost::asio::io_context& io_context, Socket&& socket)
     : io_context_(io_context), socket_(std::move(socket))
 {
     try {
-        socket_.set_option(tcp::no_delay(true));
+        socket_.lowest_layer().set_option(tcp::no_delay(true));
     }
     catch (const boost::system::system_error& e) {
         SKYMARLIN_LOG_ERROR("Error setting socket no-delay: {}", e.what());
@@ -43,7 +43,9 @@ Session::Session(boost::asio::io_context& io_context, tcp::socket&& socket)
 
 Session::~Session()
 {
-    Close();
+    if (!closed_) {
+        SKYMARLIN_LOG_CRITICAL("Session destructing without being closed; Potential memory leak!");
+    }
 }
 
 void Session::Open()
@@ -53,7 +55,7 @@ void Session::Open()
 
     const auto receive_coroutine = [](std::shared_ptr<Session> self) -> boost::asio::awaitable<void> {
         while (self->open()) {
-            if (auto packet = co_await self->ReceivePacket(); packet) {
+            if (const auto packet = co_await self->ReceivePacket(); packet) {
                 packet->Handle(self->shared_from_this());
             }
         }
@@ -63,16 +65,12 @@ void Session::Open()
     OnOpen();
 }
 
-void Session::Close()
+boost::asio::awaitable<void> Session::Close()
 {
-    if (closed_.exchange(true)) return;
+    if (closed_.exchange(true)) co_return;
 
-    try {
-        socket_.shutdown(tcp::socket::shutdown_both);
-        socket_.close();
-    }
-    catch (const boost::system::system_error& e) {
-        SKYMARLIN_LOG_ERROR("Error closing socket: {}", e.what());
+    if (auto [ec] = co_await socket_.async_shutdown(as_tuple(boost::asio::use_awaitable)); ec) {
+        SKYMARLIN_LOG_ERROR("Error on shutdown socket: {}", ec.what());
     }
 
     SessionManager::RemoveSession(shared_from_this());
@@ -84,28 +82,37 @@ void Session::SendPacket(std::shared_ptr<Packet> packet)
 {
     if (!packet) return;
 
-    const auto send_coroutine = [](std::shared_ptr<Session> self, std::shared_ptr<Packet> _packet)
-        -> boost::asio::awaitable<void> {
+    send_queue_.Push(std::move(packet));
+
+    if (send_queue_processing_.exchange(true)) return;
+    co_spawn(io_context_, SendPacketQueue(), boost::asio::detached);
+}
+
+boost::asio::awaitable<void> Session::SendPacketQueue()
+{
+    while (!send_queue_.empty()) {
+        const auto packet = send_queue_.Pop();
+
         //TODO: buffer pooling?
-        std::vector<byte> buffer(PACKET_HEADER_SIZE + _packet->length());
-        PacketHeader header = _packet->header();
+        std::vector<byte> buffer(PACKET_HEADER_SIZE + packet->length());
+        PacketHeader header = packet->header();
 
         Packet::WriteHeader(buffer.data(), header);
-        if (!_packet->Serialize(buffer.data() + PACKET_HEADER_SIZE, header.length)) {
+        if (!packet->Serialize(buffer.data() + PACKET_HEADER_SIZE, header.length)) {
             SKYMARLIN_LOG_ERROR("Failed to serialize packet body");
-            self->Close();
+            co_await Close();
             co_return;
         }
 
-        const auto [ec, _] = co_await self->socket_.async_send(
-            boost::asio::buffer(buffer), as_tuple(boost::asio::use_awaitable));
-        if (ec) {
+        if (const auto [ec, _] = co_await async_write(socket_,
+            boost::asio::buffer(buffer), as_tuple(boost::asio::use_awaitable)); ec) {
             SKYMARLIN_LOG_ERROR("Error on sending packet: {}", ec.what());
-            self->Close();
+            co_await Close();
             co_return;
         }
-    };
-    co_spawn(io_context_, send_coroutine(shared_from_this(), std::move(packet)), boost::asio::detached);
+    }
+
+    send_queue_processing_ = false;
 }
 
 void Session::BroadcastPacket(std::shared_ptr<Packet> packet)
@@ -119,20 +126,20 @@ boost::asio::awaitable<std::shared_ptr<Packet>> Session::ReceivePacket()
 {
     const PacketHeader header = co_await ReadPacketHeader();
     if (!header) {
-        Close();
+        co_await Close();
         co_return nullptr;
     }
 
     std::shared_ptr<Packet> packet = PacketResolver::Resolve(header.type);
     if (!packet) {
         SKYMARLIN_LOG_ERROR("Invalid packet type: {}", header.type);
-        Close();
+        co_await Close();
         co_return nullptr;
     }
 
     packet = co_await ReadPacketBody(std::move(packet), header.length);
     if (!packet) {
-        Close();
+        co_await Close();
         co_return nullptr;
     }
 
@@ -141,10 +148,8 @@ boost::asio::awaitable<std::shared_ptr<Packet>> Session::ReceivePacket()
 
 boost::asio::awaitable<PacketHeader> Session::ReadPacketHeader()
 {
-    const auto [ec, _] =
-        co_await socket_.async_receive(boost::asio::buffer(header_buffer_), as_tuple(boost::asio::use_awaitable));
-
-    if (ec) {
+    if (const auto [ec, _] = co_await async_read(socket_,
+        boost::asio::buffer(header_buffer_), as_tuple(boost::asio::use_awaitable)); ec) {
         SKYMARLIN_LOG_ERROR("Error on receiving packet header: {}", ec.what());
         co_return PacketHeader {};
     }
@@ -158,9 +163,8 @@ boost::asio::awaitable<std::shared_ptr<Packet>> Session::ReadPacketBody(
     //TODO: buffer pooling?
     std::vector<byte> buffer(length);
 
-    const auto [ec, _] =
-        co_await socket_.async_receive(boost::asio::buffer(buffer), as_tuple(boost::asio::use_awaitable));
-    if (ec) {
+    if (const auto [ec, _] = co_await async_read(socket_,
+        boost::asio::buffer(buffer), as_tuple(boost::asio::use_awaitable)); ec) {
         SKYMARLIN_LOG_ERROR("Error on receiving packet body: {}", ec.what());
         co_return nullptr;
     }

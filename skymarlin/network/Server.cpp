@@ -30,7 +30,13 @@
 namespace skymarlin::network
 {
 Server::Server(ServerConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory)
-    : config_(std::move(config)), io_context_(io_context), listener_(io_context_, config.listen_port, std::move(session_factory)) {}
+    : config_(std::move(config)),
+    io_context_(io_context),
+    listener_(io_context_, ssl_context_, config_.listen_port, std::move(session_factory))
+{
+    ssl_context_.use_certificate_chain_file(config_.ssl_certificate_chain_file);
+    ssl_context_.use_private_key_file(config_.ssl_private_key_file, boost::asio::ssl::context::pem);
+}
 
 void Server::Start()
 {

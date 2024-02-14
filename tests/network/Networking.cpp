@@ -78,7 +78,7 @@ private:
 class TestSession final : public Session
 {
 public:
-    explicit TestSession(boost::asio::io_context& io_context, tcp::socket&& socket)
+    explicit TestSession(boost::asio::io_context& io_context, Socket&& socket)
         : Session(io_context, std::move(socket))
     {
         SKYMARLIN_LOG_INFO("Session created on {}", local_endpoint().address().to_string());
@@ -125,7 +125,11 @@ TEST(Networking, StartAndStopServer)
 
     std::thread server_thread([&io_context] {
         auto make_server_config = []() -> ServerConfig {
-            return {.listen_port = 55555};
+            return {
+                .listen_port = 55555,
+                .ssl_certificate_chain_file = "server.test.crt",
+                .ssl_private_key_file = "server.test.key",
+            };
         };
 
         auto server = TestServer(make_server_config(), io_context);

@@ -36,7 +36,8 @@ using boost::asio::ip::tcp;
 class Listener final : boost::noncopyable
 {
 public:
-    Listener(boost::asio::io_context& io_context, unsigned short port, SessionFactory&& session_factory);
+    Listener(boost::asio::io_context& io_context, boost::asio::ssl::context& ssl_context,
+        unsigned short port, SessionFactory&& session_factory);
     ~Listener() = default;
 
     void Start();
@@ -46,6 +47,7 @@ private:
     boost::asio::awaitable<void> Listen();
 
     boost::asio::io_context& io_context_;
+    boost::asio::ssl::context& ssl_context_;
     tcp::acceptor acceptor_;
     SessionFactory session_factory_;
 
