@@ -22,18 +22,11 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
-#include <skymarlin/protocol/chat/ChatPackets.hpp>
+syntax = "proto3";
 
-namespace skymarlin::protocol::chat::test
-{
-TEST(ChatPackets, Register)
-{
-    using network::PacketResolver;
-    PacketResolver::Register(MakeChatPacketFactories());
-    if (!PacketResolver::Resolve(static_cast<PacketType>(ChatPacketType::ChatMessagePacket))) {
-        FAIL();
-    }
-}
-}
+package skymarlin.protocol.auth;
 
+message UserLogout
+{
+
+}

@@ -22,18 +22,21 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
-#include <skymarlin/protocol/chat/ChatPackets.hpp>
+syntax = "proto3";
 
-namespace skymarlin::protocol::chat::test
-{
-TEST(ChatPackets, Register)
-{
-    using network::PacketResolver;
-    PacketResolver::Register(MakeChatPacketFactories());
-    if (!PacketResolver::Resolve(static_cast<PacketType>(ChatPacketType::ChatMessagePacket))) {
-        FAIL();
-    }
-}
+package skymarlin.protocol.auth;
+
+message UserRegistration {
+  string user_id = 1;
+  string user_pw = 2;
 }
 
+message UserRegistrationResult {
+  enum Result {
+    EmailInvalidFormat = 0;
+    EmailAlreadyRegistered = 1;
+    PasswordInvalid = 2;
+  }
+
+  Result result = 1;
+}

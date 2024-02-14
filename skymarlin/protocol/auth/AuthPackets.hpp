@@ -22,18 +22,23 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
-#include <skymarlin/protocol/chat/ChatPackets.hpp>
+#pragma once
 
-namespace skymarlin::protocol::chat::test
+#include <skymarlin/network/Packet.hpp>
+#include <skymarlin/network/PacketResolver.hpp>
+
+namespace skymarlin::protocol::auth
 {
-TEST(ChatPackets, Register)
+using network::PacketLength;
+using network::PacketType;
+using network::PacketFactory;
+
+enum class AuthPacketType : PacketType {};
+
+static std::vector<std::pair<PacketType, PacketFactory>> MakeAuthPacketFactories()
 {
     using network::PacketResolver;
-    PacketResolver::Register(MakeChatPacketFactories());
-    if (!PacketResolver::Resolve(static_cast<PacketType>(ChatPacketType::ChatMessagePacket))) {
-        FAIL();
-    }
+    return {
+    };
 }
 }
-

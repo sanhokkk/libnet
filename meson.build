@@ -22,6 +22,7 @@ project_sources = [
 project_tests = [
     # Unit Tests
     ## protocol
+    'skymarlin/protocol/auth/AuthPackets.test.cpp',
     'skymarlin/protocol/chat/ChatPackets.test.cpp',
 
     ## utility
