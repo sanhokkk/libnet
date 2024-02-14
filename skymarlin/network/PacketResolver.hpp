@@ -31,41 +31,29 @@
 
 namespace skymarlin::network
 {
-using PacketFactory = std::function<std::shared_ptr<Packet>()>;
-
-
 class PacketResolver final
 {
 public:
-    static void Register(const std::vector<std::pair<PacketType, PacketFactory>>& factories);
-    static std::shared_ptr<Packet> Resolve(PacketType type);
-
-    template <typename T> requires std::is_base_of_v<Packet, T>
-    static std::pair<PacketType, PacketFactory> MakePacketFactory(PacketType type);
+    static void Register(const std::vector<std::pair<PacketProtocol, PacketFactory>>& factories);
+    static std::shared_ptr<Packet> Resolve(PacketProtocol type);
 
 private:
-    inline static std::unordered_map<PacketType, PacketFactory> factory_map_ {};
+    inline static std::unordered_map<PacketProtocol, PacketFactory> factory_map_ {};
 };
 
 
-inline void PacketResolver::Register(const std::vector<std::pair<PacketType, PacketFactory>>& factories)
+inline void PacketResolver::Register(const std::vector<std::pair<PacketProtocol, PacketFactory>>& factories)
 {
     for (const auto& [type, factory] : factories) {
         factory_map_[type] = factory;
     }
 }
 
-inline std::shared_ptr<Packet> PacketResolver::Resolve(const PacketType type)
+inline std::shared_ptr<Packet> PacketResolver::Resolve(const PacketProtocol type)
 {
     if (!factory_map_.contains(type)) {
         return nullptr;
     }
     return factory_map_[type]();
-}
-
-template <typename T> requires std::is_base_of_v<Packet, T>
-std::pair<PacketType, PacketFactory> PacketResolver::MakePacketFactory(PacketType type)
-{
-    return {type, [] { return std::make_shared<T>(); }};
 }
 }

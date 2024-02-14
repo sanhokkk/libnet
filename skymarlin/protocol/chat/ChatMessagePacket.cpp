@@ -57,6 +57,6 @@ PacketLength ChatMessagePacket::length() const { return chat_message_.ByteSizeLo
 
 network::PacketHeader ChatMessagePacket::header() const
 {
-    return {.length = length(), .type = static_cast<PacketType>(ChatPacketType::ChatMessagePacket), .crypto = 0};
+    return {.length = length(), .protocol = static_cast<PacketProtocol>(ChatPacketProtocol::ChatMessage)};
 }
 }

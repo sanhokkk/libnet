@@ -31,24 +31,24 @@
 
 namespace skymarlin::network
 {
-using PacketLength = u16; // Exclude header length
-using PacketType = u8;
-using PacketCrypto = u8;
-
-constexpr static size_t PACKET_HEADER_SIZE = sizeof(PacketLength) + sizeof(PacketType);
-
 class Session;
+class Packet;
+
+using PacketLength = u16; // Exclude header length
+using PacketProtocol = u16;
+using PacketFactory = std::function<std::shared_ptr<Packet>()>;
+
+constexpr static size_t PACKET_HEADER_SIZE = sizeof(PacketLength) + sizeof(PacketProtocol);
 
 
 struct PacketHeader
 {
     PacketLength length {0};
-    PacketType type {INVALID_PACKET_TYPE};
-    PacketCrypto crypto {0};
+    PacketProtocol protocol {INVALID_PACKET_PROTOCOL};
 
-    explicit operator bool() const { return type != INVALID_PACKET_TYPE; }
+    explicit operator bool() const { return protocol != INVALID_PACKET_PROTOCOL; }
 
-    static constexpr PacketType INVALID_PACKET_TYPE = 0;
+    static constexpr PacketProtocol INVALID_PACKET_PROTOCOL = 0;
 };
 
 
@@ -66,6 +66,9 @@ public:
 
     static PacketHeader ReadHeader(byte* src);
     static void WriteHeader(byte* dest, const PacketHeader& src);
+
+    template <typename T> requires std::is_base_of_v<Packet, T>
+    static std::pair<PacketProtocol, PacketFactory> MakePacketFactory(PacketProtocol type);
 };
 
 
@@ -77,11 +80,8 @@ inline PacketHeader Packet::ReadHeader(byte* src)
     header.length = utility::BitConverter::Convert<PacketLength>(src + pos);
     pos += sizeof(PacketLength);
 
-    header.type = utility::BitConverter::Convert<PacketType>(src + pos);
-    pos += sizeof(PacketType);
-
-    header.crypto = utility::BitConverter::Convert<PacketCrypto>(src + pos);
-    // pos += sizeof(PacketCrypto);
+    header.protocol = utility::BitConverter::Convert<PacketProtocol>(src + pos);
+    pos += sizeof(PacketProtocol);
 
     return header;
 }
@@ -93,10 +93,13 @@ inline void Packet::WriteHeader(byte* dest, const PacketHeader& src)
     utility::BitConverter::Convert<PacketLength>(src.length, dest + pos);
     pos += sizeof(PacketLength);
 
-    utility::BitConverter::Convert<PacketType>(src.type, dest + pos);
-    pos += sizeof(PacketType);
+    utility::BitConverter::Convert<PacketProtocol>(src.protocol, dest + pos);
+    pos += sizeof(PacketProtocol);
+}
 
-    utility::BitConverter::Convert<PacketCrypto>(src.crypto, dest + pos);
-    // pos += sizeof(PacketCrypto);
+template <typename PacketType> requires std::is_base_of_v<Packet, PacketType>
+std::pair<PacketProtocol, PacketFactory> Packet::MakePacketFactory(PacketProtocol type)
+{
+    return {type, [] { return std::make_shared<PacketType>(); }};
 }
 }

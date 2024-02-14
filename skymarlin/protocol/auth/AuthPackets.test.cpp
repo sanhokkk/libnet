@@ -23,13 +23,13 @@
  */
 
 #include <gtest/gtest.h>
+#include <skymarlin/network/PacketResolver.hpp>
 #include <skymarlin/protocol/auth/AuthPackets.hpp>
 
 namespace skymarlin::protocol::auth::test
 {
 TEST(ChatPackets, Register)
 {
-    using network::PacketResolver;
-    PacketResolver::Register(MakeAuthPacketFactories());
+    network::PacketResolver::Register(MakeAuthPacketFactories());
 }
 }

@@ -67,9 +67,9 @@ public:
 
     PacketLength length() const override { return sizeof(decltype(user_id_)); }
 
-    PacketHeader header() const override { return {.length = this->length(), .type = Type, .crypto = 0}; }
+    PacketHeader header() const override { return {.length = this->length(), .protocol = Protocol}; }
 
-    constexpr static PacketType Type = 77;
+    constexpr static PacketProtocol Protocol = 77;
 
 private:
     u32 user_id_ {};

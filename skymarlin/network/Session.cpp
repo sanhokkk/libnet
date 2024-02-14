@@ -130,9 +130,9 @@ boost::asio::awaitable<std::shared_ptr<Packet>> Session::ReceivePacket()
         co_return nullptr;
     }
 
-    std::shared_ptr<Packet> packet = PacketResolver::Resolve(header.type);
+    std::shared_ptr<Packet> packet = PacketResolver::Resolve(header.protocol);
     if (!packet) {
-        SKYMARLIN_LOG_ERROR("Invalid packet type: {}", header.type);
+        SKYMARLIN_LOG_ERROR("Invalid packet protocol: {}", header.protocol);
         co_await Close();
         co_return nullptr;
     }

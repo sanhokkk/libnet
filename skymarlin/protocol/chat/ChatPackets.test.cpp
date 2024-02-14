@@ -23,6 +23,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <skymarlin/network/PacketResolver.hpp>
 #include <skymarlin/protocol/chat/ChatPackets.hpp>
 
 namespace skymarlin::protocol::chat::test
@@ -31,7 +32,7 @@ TEST(ChatPackets, Register)
 {
     using network::PacketResolver;
     PacketResolver::Register(MakeChatPacketFactories());
-    if (!PacketResolver::Resolve(static_cast<PacketType>(ChatPacketType::ChatMessagePacket))) {
+    if (!PacketResolver::Resolve(static_cast<PacketProtocol>(ChatPacketProtocol::ChatMessage))) {
         FAIL();
     }
 }

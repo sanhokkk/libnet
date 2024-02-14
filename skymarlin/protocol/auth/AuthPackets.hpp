@@ -25,19 +25,17 @@
 #pragma once
 
 #include <skymarlin/network/Packet.hpp>
-#include <skymarlin/network/PacketResolver.hpp>
 
 namespace skymarlin::protocol::auth
 {
 using network::PacketLength;
-using network::PacketType;
+using network::PacketProtocol;
 using network::PacketFactory;
 
-enum class AuthPacketType : PacketType {};
+enum class AuthPacketProtocol : PacketProtocol {};
 
-static std::vector<std::pair<PacketType, PacketFactory>> MakeAuthPacketFactories()
+static std::vector<std::pair<PacketProtocol, PacketFactory>> MakeAuthPacketFactories()
 {
-    using network::PacketResolver;
     return {
     };
 }
