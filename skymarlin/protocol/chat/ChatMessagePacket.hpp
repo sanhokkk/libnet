@@ -33,7 +33,7 @@ class ChatMessagePacket final : public network::Packet
 {
 public:
     ChatMessagePacket() = default;
-    ChatMessagePacket(u32 client_id, std::string_view message);
+    ChatMessagePacket(uint32_t client_id, std::string_view message);
     ~ChatMessagePacket() override = default;
 
     bool Serialize(byte* dest, size_t size) const override;

@@ -29,52 +29,13 @@
 
 #include <boost/asio.hpp>
 #include <skymarlin/network/Client.hpp>
+#include <skymarlin/network/Log.hpp>
 #include <skymarlin/network/PacketResolver.hpp>
 #include <skymarlin/network/Server.hpp>
 #include <skymarlin/network/Session.hpp>
-#include <skymarlin/utility/Log.hpp>
-#include <skymarlin/utility/MutableByteStream.hpp>
 
 namespace skymarlin::network::test
 {
-class TestPacket final : public Packet
-{
-public:
-    TestPacket() = default;
-
-    explicit TestPacket(const u32 user_id)
-        : user_id_(user_id) {}
-
-    bool Serialize(byte* dest, const size_t) const override
-    {
-        utility::MutableByteStream buffer(dest, length());
-        buffer << user_id_;
-        return true;
-    };
-
-    bool Deserialize(const byte* src, const size_t) override
-    {
-        const utility::ConstByteStream buffer(const_cast<byte*>(src), length());
-        buffer >> user_id_;
-        return true;
-    };
-
-    void Handle(std::shared_ptr<Session>) override
-    {
-        SKYMARLIN_LOG_INFO("Handling TestPacket");
-        // session->Close();
-    }
-
-    PacketLength length() const override { return sizeof(decltype(user_id_)); }
-
-    PacketHeader header() const override { return {.length = this->length(), .protocol = Protocol}; }
-
-    constexpr static PacketProtocol Protocol = 77;
-
-private:
-    u32 user_id_ {};
-};
-
 class TestSession final : public Session
 {
 public:
@@ -85,16 +46,9 @@ public:
     }
 
 protected:
-    void OnOpen() override
-    {
-        auto hello_packet = std::make_unique<TestPacket>(42);
-        SendPacket(std::move(hello_packet));
-    }
+    void OnOpen() override {}
 
-    void OnClose() override
-    {
-        // SKYMARLIN_LOG_INFO("Session closed on {}:{}", local_endpoint().address().to_string(), local_endpoint().port());
-    }
+    void OnClose() override {}
 };
 
 class TestServer final : public Server, std::enable_shared_from_this<TestServer>
@@ -165,34 +119,5 @@ TEST(Networking, StartAndStopClient)
     io_work_guard.reset();
 
     if (client_thread.joinable()) client_thread.join();
-}
-
-TEST(Networking, Connection)
-{
-    /*constexpr auto port = static_cast<unsigned short>(50000);
-
-    const auto make_packet_factories = [] {
-        return std::vector {
-            PacketResolver::MakePacketFactory<TestPacket>(TestPacket::Type),
-        };
-    };
-    PacketResolver::Register(make_packet_factories());
-
-    auto server = TestServer({port});
-    std::thread server_thread([&server] {
-        server.Start();
-    });
-
-    auto client = TestClient({"localhost", port});
-    std::thread client_thread([&client] {
-        client.Start();
-    });
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    client.Stop();
-    client_thread.join();
-
-    server.Stop();
-    server_thread.join();*/
 }
 }

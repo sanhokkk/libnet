@@ -24,9 +24,9 @@
 
 #pragma once
 
+#include <skymarlin/network/Log.hpp>
 #include <skymarlin/network/Session.hpp>
 #include <skymarlin/thread/Map.hpp>
-#include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::network
 {

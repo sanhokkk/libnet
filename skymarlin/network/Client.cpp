@@ -24,7 +24,7 @@
 
 #include <skymarlin/network/Client.hpp>
 
-#include <skymarlin/utility/Log.hpp>
+#include <skymarlin/network/Log.hpp>
 
 namespace skymarlin::network
 {

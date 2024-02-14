@@ -22,37 +22,47 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
-#include <skymarlin/utility/BitConverter.hpp>
+#pragma once
 
-namespace skymarlin::utility
+#include <algorithm>
+#include <bit>
+#include <cstring>
+
+namespace skymarlin::network::details
 {
-TEST(BitConverter, NumericReadWrite)
+template <typename T>
+concept NumericType = std::is_arithmetic_v<T>;
+
+using byte = uint8_t;
+
+class BitConverter
 {
-    constexpr size_t buffer_size = 64;
-    byte buffer[buffer_size]{};
+public:
+    template <NumericType T>
+    static T Convert(byte* src)
+    {
+        AlignEndianness(src, sizeof(T));
 
-    size_t wpos{0};
-    constexpr u64 u_1{0xa130d'0132'abdb};
-    BitConverter::Convert<u64>(u_1, buffer + wpos);
-    wpos += sizeof(u64);
+        T value {};
+        std::memcpy(&value, src, sizeof(T));
+        return value;
+    }
 
-    constexpr f32 f_1{12397.12376f};
-    BitConverter::Convert<f32>(f_1, buffer + wpos);
-    wpos += sizeof(f32);
+    template <NumericType T>
+    static void Convert(const T value, byte* dest)
+    {
+        std::memcpy(dest, &value, sizeof(T));
+        AlignEndianness(dest, sizeof(T));
+    }
 
-    constexpr byte b_1{123};
-    BitConverter::Convert<byte>(b_1, buffer + wpos);
-    // wpos += sizeof(byte);
+private:
+    static void AlignEndianness(byte* src, const size_t n)
+    {
+        if constexpr (std::endian::native == std::endian::little) {
+            return;
+        }
 
-    size_t rpos{0};
-    ASSERT_EQ(u_1, BitConverter::Convert<u64>(buffer + rpos));
-    rpos += sizeof(u64);
-
-    ASSERT_EQ(f_1, BitConverter::Convert<f32>(buffer + rpos));
-    rpos += sizeof(f32);
-
-    ASSERT_EQ(b_1, BitConverter::Convert<byte>(buffer + rpos));
-    // rpos += sizeof(byte);
-}
+        std::reverse(src, src + n);
+    }
+};
 }

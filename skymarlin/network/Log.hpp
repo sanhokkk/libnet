@@ -26,7 +26,7 @@
 
 #include <spdlog/spdlog.h>
 
-namespace skymarlin::utility
+namespace skymarlin::network
 {
 #define SKYMARLIN_LOG_INFO(format, ...) \
     spdlog::info(format __VA_OPT__(,) __VA_ARGS__)

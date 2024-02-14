@@ -24,13 +24,13 @@
 
 #include <skymarlin/protocol/chat/ChatMessagePacket.hpp>
 
+#include <skymarlin/network/Log.hpp>
 #include <skymarlin/network/Session.hpp>
 #include <skymarlin/protocol/chat/ChatPackets.hpp>
-#include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::protocol::chat
 {
-ChatMessagePacket::ChatMessagePacket(const u32 client_id, std::string_view message)
+ChatMessagePacket::ChatMessagePacket(const uint32_t client_id, std::string_view message)
 {
     chat_message_.set_client_id(client_id);
     chat_message_.set_message(message);

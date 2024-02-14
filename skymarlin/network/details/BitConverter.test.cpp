@@ -23,48 +23,36 @@
  */
 
 #include <gtest/gtest.h>
-#include <skymarlin/utility/MutableByteStream.hpp>
-#include <skymarlin/utility/TypeDefinitions.hpp>
+#include <skymarlin/network/details/BitConverter.hpp>
 
-namespace skymarlin::utility
+namespace skymarlin::network::details
 {
-TEST(MutableByteStream, Write)
+TEST(BitConverter, NumericReadWrite)
 {
-    constexpr size_t buffer_size = 256;
-    byte src[buffer_size]{};
-    auto buffer = MutableByteStream(src, buffer_size);
+    constexpr size_t buffer_size = 64;
+    byte buffer[buffer_size]{};
 
-    constexpr std::string_view sv("I am a string");
-    buffer << 42 << sv << 125.12321f;
+    size_t wpos{0};
+    constexpr uint64_t u_1{0xa130d'0132'abdb};
+    BitConverter::Convert(u_1, buffer + wpos);
+    wpos += sizeof(uint64_t);
 
-    i32 i1;
-    std::string s;
-    f32 f1;
-    buffer >> i1 >> s >> f1;
+    constexpr float f_1{12397.12376f};
+    BitConverter::Convert(f_1, buffer + wpos);
+    wpos += sizeof(float);
 
-    ASSERT_EQ(42, i1);
-    ASSERT_EQ(sv, s);
-    ASSERT_EQ(125.12321f, f1);
-}
+    constexpr uint8_t b_1{123};
+    BitConverter::Convert(b_1, buffer + wpos);
+    // wpos += sizeof(byte);
 
-TEST(MutableByteStream, InvalidStringSize)
-{
-    constexpr size_t buffer_size = 16;
-    byte src[buffer_size]{};
-    auto buffer = MutableByteStream(src, buffer_size);
+    size_t rpos{0};
+    ASSERT_EQ(u_1, BitConverter::Convert<uint64_t>(buffer + rpos));
+    rpos += sizeof(uint64_t);
 
-    try {
-        std::string s {};
-        for (size_t i = 0; i < buffer_size + 10; ++i) {
-            s += "k";
-        }
+    ASSERT_EQ(f_1, BitConverter::Convert<float>(buffer + rpos));
+    rpos += sizeof(float);
 
-        buffer << s;
-
-        FAIL(); // Should have thrown error
-    } catch (const ByteBufferInvalidValueException& e) {
-        std::cout << e.what() << std::endl;
-        return;
-    }
+    ASSERT_EQ(b_1, BitConverter::Convert<uint8_t>(buffer + rpos));
+    // rpos += sizeof(uint8_t);
 }
 }

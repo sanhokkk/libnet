@@ -24,9 +24,9 @@
 
 #include <skymarlin/network/Session.hpp>
 
+#include <skymarlin/network/Log.hpp>
 #include <skymarlin/network/PacketResolver.hpp>
 #include <skymarlin/network/SessionManager.hpp>
-#include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::network
 {

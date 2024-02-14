@@ -26,16 +26,20 @@
 
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
-#include <skymarlin/utility/BitConverter.hpp>
-#include <skymarlin/utility/TypeDefinitions.hpp>
+#include <skymarlin/network/details/BitConverter.hpp>
+
+namespace skymarlin
+{
+using byte = uint8_t;
+}
 
 namespace skymarlin::network
 {
 class Session;
 class Packet;
 
-using PacketLength = u16; // Exclude header length
-using PacketProtocol = u16;
+using PacketLength = uint16_t; // Exclude header length
+using PacketProtocol = uint16_t;
 using PacketFactory = std::function<std::shared_ptr<Packet>()>;
 
 constexpr static size_t PACKET_HEADER_SIZE = sizeof(PacketLength) + sizeof(PacketProtocol);
@@ -77,10 +81,10 @@ inline PacketHeader Packet::ReadHeader(byte* src)
     PacketHeader header;
     size_t pos {0};
 
-    header.length = utility::BitConverter::Convert<PacketLength>(src + pos);
+    header.length = details::BitConverter::Convert<PacketLength>(src + pos);
     pos += sizeof(PacketLength);
 
-    header.protocol = utility::BitConverter::Convert<PacketProtocol>(src + pos);
+    header.protocol = details::BitConverter::Convert<PacketProtocol>(src + pos);
     pos += sizeof(PacketProtocol);
 
     return header;
@@ -90,10 +94,10 @@ inline void Packet::WriteHeader(byte* dest, const PacketHeader& src)
 {
     size_t pos {0};
 
-    utility::BitConverter::Convert<PacketLength>(src.length, dest + pos);
+    details::BitConverter::Convert<PacketLength>(src.length, dest + pos);
     pos += sizeof(PacketLength);
 
-    utility::BitConverter::Convert<PacketProtocol>(src.protocol, dest + pos);
+    details::BitConverter::Convert<PacketProtocol>(src.protocol, dest + pos);
     pos += sizeof(PacketProtocol);
 }
 

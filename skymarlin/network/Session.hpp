@@ -37,7 +37,7 @@ namespace skymarlin::network
 using boost::asio::ip::tcp;
 using Socket = boost::asio::ssl::stream<tcp::socket>;
 using SessionFactory = std::function<std::shared_ptr<Session>(boost::asio::io_context&, Socket&&)>;
-using SessionId = u64;
+using SessionId = uint64_t;
 
 class Session : public std::enable_shared_from_this<Session>, boost::noncopyable
 {

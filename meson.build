@@ -21,13 +21,12 @@ project_sources = [
 
 project_tests = [
     # Unit Tests
+    ## network
+    'skymarlin/network/details/BitConverter.test.cpp',
+
     ## protocol
     'skymarlin/protocol/auth/AuthPackets.test.cpp',
     'skymarlin/protocol/chat/ChatPackets.test.cpp',
-
-    ## utility
-    'skymarlin/utility/MutableByteStream.test.cpp',
-    'skymarlin/utility/BitConverter.test.cpp',
 
     # Functional/Integration Tests
     'tests/network/Networking.cpp',
