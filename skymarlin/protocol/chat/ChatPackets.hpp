@@ -25,23 +25,24 @@
 #pragma once
 
 #include <skymarlin/network/Packet.hpp>
+#include <skymarlin/network/PacketResolver.hpp>
 #include <skymarlin/protocol/chat/ChatMessagePacket.hpp>
 
 namespace skymarlin::protocol::chat
 {
 using network::PacketLength;
 using network::PacketProtocol;
-using network::PacketFactory;
 
 enum class ChatPacketProtocol : PacketProtocol
 {
     ChatMessage = 0x01,
 };
 
-static std::vector<std::pair<PacketProtocol, PacketFactory>> MakeChatPacketFactories()
+static void RegisterChatPackets()
 {
-    return {
-        network::Packet::MakePacketFactory<ChatMessagePacket>(static_cast<PacketProtocol>(ChatPacketProtocol::ChatMessage)),
-    };
+    using network::Packet;
+    network::PacketResolver::Register({
+        Packet::MakePacketFactory<ChatMessagePacket>(static_cast<PacketProtocol>(ChatPacketProtocol::ChatMessage)),
+    });
 }
 }
