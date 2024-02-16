@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-#include <Config.hpp>
 #include <gtest/gtest.h>
 
 #include <chrono>

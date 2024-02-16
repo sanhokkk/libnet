@@ -117,7 +117,7 @@ boost::asio::awaitable<void> Session::SendPacketQueue()
 
 void Session::BroadcastPacket(std::shared_ptr<Packet> packet)
 {
-    SessionManager::ForEachSession([packet = std::move(packet)](const std::shared_ptr<Session>& session) {
+    SessionManager::ForEachAllSession([packet = std::move(packet)](const std::shared_ptr<Session>& session) {
         session->SendPacket(packet);
     });
 }

@@ -39,8 +39,11 @@ public:
     static std::shared_ptr<Session> GetSession(SessionId id);
     static void ClearSessions();
 
-    template<typename... Args>
-    static void ForEachSession(std::function<void(std::shared_ptr<Session>&)>&& function, Args&&... args);
+    template <typename... Args>
+    static void ForEachAllSession(std::function<void(std::shared_ptr<Session>&)>&& function, Args&&... args);
+    template <typename... Args>
+    static void ForEachSomeSession(std::function<bool(const std::shared_ptr<Session>&)>&& filter,
+        std::function<void(std::shared_ptr<Session>&)>&& function, Args&&... args);
 
 private:
     inline static thread::ConcurrentMap<SessionId, std::shared_ptr<Session>> sessions_;
@@ -86,10 +89,16 @@ inline void SessionManager::ClearSessions()
     sessions_.Clear();
 }
 
-template <typename ... Args>
-void SessionManager::ForEachSession(std::function<void(std::shared_ptr<Session>&)>&& function, Args&&... args)
+template <typename... Args>
+void SessionManager::ForEachAllSession(std::function<void(std::shared_ptr<Session>&)>&& function, Args&&... args)
 {
-    sessions_.ForEach(function, args...);
+    sessions_.ForEachAll(std::move(function), std::move(args)...);
 }
 
+template <typename... Args>
+void SessionManager::ForEachSomeSession(std::function<bool(const std::shared_ptr<Session>&)>&& filter,
+    std::function<void(std::shared_ptr<Session>&)>&& function, Args&&... args)
+{
+    sessions_.ForEachSome(std::move(filter), std::move(function), std::move(args)...);
+}
 }
