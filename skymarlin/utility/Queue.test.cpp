@@ -22,40 +22,34 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include <gtest/gtest.h>
+#include <skymarlin/utility/Queue.hpp>
 
-#include <functional>
-#include <unordered_map>
-
-#include <skymarlin/net/Message.hpp>
-#include <skymarlin/net/Packet.hpp>
-
-namespace skymarlin::net
+namespace skymarlin::utility::test
 {
-class PacketResolver final
+TEST(ConcurrentQueue, ThreadSafety)
 {
-public:
-    static void Register(const std::vector<std::pair<PacketProtocol, PacketFactory>>& factories);
-    static void Register(const std::vector<std::pair<MessageType, MessageFactory>>& factories);
-    static std::shared_ptr<Packet> Resolve(PacketProtocol type);
+    ConcurrentQueue<int> queue {};
 
-private:
-    inline static std::unordered_map<PacketProtocol, PacketFactory> factory_map_ {};
-};
+    std::thread t1([&queue] {
+        for (int i = 0; i < 10000; ++i) {
+            queue.Push(42);
+            queue.Pop();
+        }
+    });
 
+    std::thread t2([&queue] {
+        for (int i = 0; i < 10000; ++i) {
+            queue.Push(27);
+            queue.Pop();
+        }
+    });
 
-inline void PacketResolver::Register(const std::vector<std::pair<PacketProtocol, PacketFactory>>& factories)
-{
-    for (const auto& [type, factory] : factories) {
-        factory_map_[type] = factory;
+    t1.join();
+    t2.join();
+
+    if (!queue.empty()) {
+        FAIL();
     }
-}
-
-inline std::shared_ptr<Packet> PacketResolver::Resolve(const PacketProtocol type)
-{
-    if (!factory_map_.contains(type)) {
-        return nullptr;
-    }
-    return factory_map_[type]();
 }
 }

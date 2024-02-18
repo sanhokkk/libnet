@@ -28,6 +28,10 @@ project_tests = [
     'skymarlin/protocol/auth/AuthPackets.test.cpp',
     'skymarlin/protocol/chat/ChatPackets.test.cpp',
 
+    ## utility
+    'skymarlin/utility/Map.test.cpp',
+    'skymarlin/utility/Queue.test.cpp',
+
     # Functional/Integration Tests
     'tests/network/Networking.cpp',
 ]
@@ -45,8 +49,6 @@ project_dependencies = [
     dependency('openssl'),
     dependency('protobuf', modules : ['protobuf::libprotobuf']),
     dependency('spdlog'),
-
-    dependency('libthread', fallback : ['libthread', 'libthread_dep']),
 ]
 inc = include_directories('.')
 

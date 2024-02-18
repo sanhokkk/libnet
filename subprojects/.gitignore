@@ -2,6 +2,5 @@
 !.gitignore
 
 !abseil-cpp.wrap
-!libthread.wrap
 !protobuf.wrap
 !spdlog.wrap

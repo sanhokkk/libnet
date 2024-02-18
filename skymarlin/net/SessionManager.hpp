@@ -26,7 +26,7 @@
 
 #include <skymarlin/net/Log.hpp>
 #include <skymarlin/net/Session.hpp>
-#include <skymarlin/thread/Map.hpp>
+#include <skymarlin/utility/Map.hpp>
 
 namespace skymarlin::net
 {
@@ -46,7 +46,7 @@ public:
         std::function<void(std::shared_ptr<Session>&)>&& function, Args&&... args);
 
 private:
-    inline static thread::ConcurrentMap<SessionId, std::shared_ptr<Session>> sessions_;
+    inline static utility::ConcurrentMap<SessionId, std::shared_ptr<Session>> sessions_;
     inline static std::atomic<SessionId> id_generator {0};
 };
 

@@ -30,7 +30,7 @@
 #include <boost/asio/ssl.hpp>
 #include <boost/core/noncopyable.hpp>
 #include <skymarlin/net/Packet.hpp>
-#include <skymarlin/thread/Queue.hpp>
+#include <skymarlin/utility/Queue.hpp>
 
 namespace skymarlin::net
 {
@@ -73,7 +73,7 @@ private:
 
     Socket socket_;
     byte header_buffer_[PacketHeader::Size] {};
-    thread::ConcurrentQueue<std::shared_ptr<Packet>> send_queue_ {};
+    utility::ConcurrentQueue<std::shared_ptr<Packet>> send_queue_ {};
     std::atomic<bool> send_queue_processing_ {false};
 
     SessionId id_ {0};

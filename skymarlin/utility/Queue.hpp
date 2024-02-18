@@ -24,38 +24,38 @@
 
 #pragma once
 
-#include <functional>
-#include <unordered_map>
+#include <mutex>
+#include <queue>
 
-#include <skymarlin/net/Message.hpp>
-#include <skymarlin/net/Packet.hpp>
-
-namespace skymarlin::net
-{
-class PacketResolver final
-{
+namespace skymarlin::utility {
+template<typename T>
+class ConcurrentQueue {
 public:
-    static void Register(const std::vector<std::pair<PacketProtocol, PacketFactory>>& factories);
-    static void Register(const std::vector<std::pair<MessageType, MessageFactory>>& factories);
-    static std::shared_ptr<Packet> Resolve(PacketProtocol type);
+    ConcurrentQueue() = default;
+    ~ConcurrentQueue() = default;
+
+    ConcurrentQueue(const ConcurrentQueue&) = delete;
+    ConcurrentQueue& operator=(const ConcurrentQueue&) = delete;
+
+    void Push(T&& value) {
+        std::lock_guard lock(mutex);
+        queue_.push(std::forward<T>(value));
+    }
+
+    T Pop() {
+        std::lock_guard lock(mutex);
+        T value = std::move(queue_.front());
+        queue_.pop();
+        return value;
+    }
+
+    bool empty() const {
+        std::lock_guard lock(mutex);
+        return queue_.empty();
+    }
 
 private:
-    inline static std::unordered_map<PacketProtocol, PacketFactory> factory_map_ {};
+    std::queue<T> queue_{};
+    mutable std::mutex mutex{};
 };
-
-
-inline void PacketResolver::Register(const std::vector<std::pair<PacketProtocol, PacketFactory>>& factories)
-{
-    for (const auto& [type, factory] : factories) {
-        factory_map_[type] = factory;
-    }
-}
-
-inline std::shared_ptr<Packet> PacketResolver::Resolve(const PacketProtocol type)
-{
-    if (!factory_map_.contains(type)) {
-        return nullptr;
-    }
-    return factory_map_[type]();
-}
 }
