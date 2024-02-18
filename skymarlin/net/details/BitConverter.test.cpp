@@ -22,27 +22,37 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include <gtest/gtest.h>
+#include <skymarlin/net/details/BitConverter.hpp>
 
-#include <skymarlin/net/Packet.hpp>
-#include <skymarlin/net/PacketResolver.hpp>
-#include <skymarlin/protocol/chat/ChatMessagePacket.hpp>
-
-namespace skymarlin::protocol::chat
+namespace skymarlin::net::details
 {
-using net::PacketLength;
-using net::PacketProtocol;
-
-enum class ChatPacketProtocol : PacketProtocol
+TEST(BitConverter, NumericReadWrite)
 {
-    ChatMessage = 0x01,
-};
+    constexpr size_t buffer_size = 64;
+    byte buffer[buffer_size]{};
 
-static void RegisterChatPackets()
-{
-    using net::Packet;
-    net::PacketResolver::Register({
-        Packet::MakePacketFactory<ChatMessagePacket>(static_cast<PacketProtocol>(ChatPacketProtocol::ChatMessage)),
-    });
+    size_t wpos{0};
+    constexpr uint64_t u_1{0xa130d'0132'abdb};
+    BitConverter::Convert(u_1, buffer + wpos);
+    wpos += sizeof(uint64_t);
+
+    constexpr float f_1{12397.12376f};
+    BitConverter::Convert(f_1, buffer + wpos);
+    wpos += sizeof(float);
+
+    constexpr uint8_t b_1{123};
+    BitConverter::Convert(b_1, buffer + wpos);
+    // wpos += sizeof(byte);
+
+    size_t rpos{0};
+    ASSERT_EQ(u_1, BitConverter::Convert<uint64_t>(buffer + rpos));
+    rpos += sizeof(uint64_t);
+
+    ASSERT_EQ(f_1, BitConverter::Convert<float>(buffer + rpos));
+    rpos += sizeof(float);
+
+    ASSERT_EQ(b_1, BitConverter::Convert<uint8_t>(buffer + rpos));
+    // rpos += sizeof(uint8_t);
 }
 }

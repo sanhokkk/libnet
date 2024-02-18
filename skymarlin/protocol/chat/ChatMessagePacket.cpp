@@ -24,8 +24,8 @@
 
 #include <skymarlin/protocol/chat/ChatMessagePacket.hpp>
 
-#include <skymarlin/network/Log.hpp>
-#include <skymarlin/network/Session.hpp>
+#include <skymarlin/net/Log.hpp>
+#include <skymarlin/net/Session.hpp>
 #include <skymarlin/protocol/chat/ChatPackets.hpp>
 
 namespace skymarlin::protocol::chat
@@ -46,7 +46,7 @@ bool ChatMessagePacket::Deserialize(const byte* src, const size_t size)
     return chat_message_.ParseFromArray(src, static_cast<int>(size));
 }
 
-void ChatMessagePacket::Handle(const std::shared_ptr<network::Session> session)
+void ChatMessagePacket::Handle(const std::shared_ptr<net::Session> session)
 {
     SKYMARLIN_LOG_INFO("[Message] {} : {}", session->id(), chat_message_.message());
     //TODO: Client doesn't need to broadcast.
@@ -55,7 +55,7 @@ void ChatMessagePacket::Handle(const std::shared_ptr<network::Session> session)
 
 PacketLength ChatMessagePacket::length() const { return chat_message_.ByteSizeLong(); }
 
-network::PacketHeader ChatMessagePacket::header() const
+net::PacketHeader ChatMessagePacket::header() const
 {
     return {.length = length(), .protocol = static_cast<PacketProtocol>(ChatPacketProtocol::ChatMessage)};
 }

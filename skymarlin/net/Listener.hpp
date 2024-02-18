@@ -24,25 +24,33 @@
 
 #pragma once
 
-#include <skymarlin/net/Packet.hpp>
-#include <skymarlin/net/PacketResolver.hpp>
-#include <skymarlin/protocol/chat/ChatMessagePacket.hpp>
+#include <boost/asio.hpp>
+#include <boost/core/noncopyable.hpp>
+#include <skymarlin/net/Session.hpp>
 
-namespace skymarlin::protocol::chat
+namespace skymarlin::net
 {
-using net::PacketLength;
-using net::PacketProtocol;
+using boost::asio::ip::tcp;
 
-enum class ChatPacketProtocol : PacketProtocol
+
+class Listener final : boost::noncopyable
 {
-    ChatMessage = 0x01,
+public:
+    Listener(boost::asio::io_context& io_context, boost::asio::ssl::context& ssl_context,
+        unsigned short port, SessionFactory&& session_factory);
+    ~Listener() = default;
+
+    void Start();
+    void Stop();
+
+private:
+    boost::asio::awaitable<void> Listen();
+
+    boost::asio::io_context& io_context_;
+    boost::asio::ssl::context& ssl_context_;
+    tcp::acceptor acceptor_;
+    SessionFactory session_factory_;
+
+    std::atomic<bool> listening_ {false};
 };
-
-static void RegisterChatPackets()
-{
-    using net::Packet;
-    net::PacketResolver::Register({
-        Packet::MakePacketFactory<ChatMessagePacket>(static_cast<PacketProtocol>(ChatPacketProtocol::ChatMessage)),
-    });
-}
 }

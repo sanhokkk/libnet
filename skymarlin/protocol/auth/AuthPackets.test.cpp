@@ -24,7 +24,7 @@
 
 #include <gtest/gtest.h>
 
-#include <skymarlin/network/PacketResolver.hpp>
+#include <skymarlin/net/PacketResolver.hpp>
 #include <skymarlin/protocol/auth/AuthPackets.hpp>
 
 namespace skymarlin::protocol::auth::test

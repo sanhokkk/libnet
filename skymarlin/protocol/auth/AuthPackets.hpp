@@ -24,20 +24,20 @@
 
 #pragma once
 
-#include <skymarlin/network/Packet.hpp>
-#include <skymarlin/network/PacketResolver.hpp>
+#include <skymarlin/net/Packet.hpp>
+#include <skymarlin/net/PacketResolver.hpp>
 
 namespace skymarlin::protocol::auth
 {
-using network::PacketLength;
-using network::PacketProtocol;
+using net::PacketLength;
+using net::PacketProtocol;
 
 enum class AuthPacketProtocol : PacketProtocol {};
 
 static void RegisterAuthPackets()
 {
-    using network::Packet;
-    network::PacketResolver::Register({
+    using net::Packet;
+    net::PacketResolver::Register({
     });
 }
 }

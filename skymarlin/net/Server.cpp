@@ -22,27 +22,34 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include <skymarlin/net/Server.hpp>
 
-#include <skymarlin/net/Packet.hpp>
-#include <skymarlin/net/PacketResolver.hpp>
-#include <skymarlin/protocol/chat/ChatMessagePacket.hpp>
+#include <skymarlin/net/Log.hpp>
+#include <skymarlin/net/SessionManager.hpp>
 
-namespace skymarlin::protocol::chat
+namespace skymarlin::net
 {
-using net::PacketLength;
-using net::PacketProtocol;
-
-enum class ChatPacketProtocol : PacketProtocol
+Server::Server(ServerConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory)
+    : config_(std::move(config)),
+    io_context_(io_context),
+    listener_(io_context_, ssl_context_, config_.listen_port, std::move(session_factory))
 {
-    ChatMessage = 0x01,
-};
+    ssl_context_.use_certificate_chain_file(config_.ssl_certificate_chain_file);
+    ssl_context_.use_private_key_file(config_.ssl_private_key_file, boost::asio::ssl::context::pem);
+}
 
-static void RegisterChatPackets()
+void Server::Start()
 {
-    using net::Packet;
-    net::PacketResolver::Register({
-        Packet::MakePacketFactory<ChatMessagePacket>(static_cast<PacketProtocol>(ChatPacketProtocol::ChatMessage)),
-    });
+    running_ = true;
+    listener_.Start();
+}
+
+void Server::Stop()
+{
+    SKYMARLIN_LOG_INFO("Stopping the server...");
+    running_ = false;
+
+    listener_.Stop();
+    SessionManager::ClearSessions();
 }
 }

@@ -24,12 +24,12 @@
 
 #pragma once
 
-#include <skymarlin/network/Packet.hpp>
+#include <skymarlin/net/Packet.hpp>
 #include <skymarlin/protocol/chat/proto/ChatMessage.pb.h>
 
 namespace skymarlin::protocol::chat
 {
-class ChatMessagePacket final : public network::Packet
+class ChatMessagePacket final : public net::Packet
 {
 public:
     ChatMessagePacket() = default;
@@ -38,10 +38,10 @@ public:
 
     bool Serialize(byte* dest, size_t size) const override;
     bool Deserialize(const byte* src, size_t size) override;
-    void Handle(std::shared_ptr<network::Session> session) override;
+    void Handle(std::shared_ptr<net::Session> session) override;
 
-    network::PacketLength length() const override;
-    network::PacketHeader header() const override;
+    net::PacketLength length() const override;
+    net::PacketHeader header() const override;
 
 private:
     ChatMessage chat_message_ {};

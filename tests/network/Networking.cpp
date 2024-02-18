@@ -28,12 +28,12 @@
 #include <thread>
 
 #include <boost/asio.hpp>
-#include <skymarlin/network/Client.hpp>
-#include <skymarlin/network/Log.hpp>
-#include <skymarlin/network/Server.hpp>
-#include <skymarlin/network/Session.hpp>
+#include <skymarlin/net/Client.hpp>
+#include <skymarlin/net/Log.hpp>
+#include <skymarlin/net/Server.hpp>
+#include <skymarlin/net/Session.hpp>
 
-namespace skymarlin::network::test
+namespace skymarlin::net::test
 {
 class TestSession final : public Session
 {

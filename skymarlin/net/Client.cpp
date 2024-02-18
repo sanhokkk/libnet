@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
-#include <skymarlin/network/Client.hpp>
+#include <skymarlin/net/Client.hpp>
 
-#include <skymarlin/network/Log.hpp>
+#include <skymarlin/net/Log.hpp>
 
-namespace skymarlin::network
+namespace skymarlin::net
 {
 Client::Client(ClientConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory)
     : config_(std::move(config)), io_context_(io_context), session_factory_(std::move(session_factory))

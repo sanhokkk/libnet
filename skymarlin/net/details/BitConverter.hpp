@@ -24,25 +24,45 @@
 
 #pragma once
 
-#include <skymarlin/net/Packet.hpp>
-#include <skymarlin/net/PacketResolver.hpp>
-#include <skymarlin/protocol/chat/ChatMessagePacket.hpp>
+#include <algorithm>
+#include <bit>
+#include <cstring>
 
-namespace skymarlin::protocol::chat
+namespace skymarlin::net::details
 {
-using net::PacketLength;
-using net::PacketProtocol;
+template <typename T>
+concept NumericType = std::is_arithmetic_v<T>;
 
-enum class ChatPacketProtocol : PacketProtocol
+using byte = uint8_t;
+
+class BitConverter
 {
-    ChatMessage = 0x01,
+public:
+    template <NumericType T>
+    static T Convert(byte* src)
+    {
+        AlignEndianness(src, sizeof(T));
+
+        T value {};
+        std::memcpy(&value, src, sizeof(T));
+        return value;
+    }
+
+    template <NumericType T>
+    static void Convert(const T value, byte* dest)
+    {
+        std::memcpy(dest, &value, sizeof(T));
+        AlignEndianness(dest, sizeof(T));
+    }
+
+private:
+    static void AlignEndianness(byte* src, const size_t n)
+    {
+        if constexpr (std::endian::native == std::endian::little) {
+            return;
+        }
+
+        std::reverse(src, src + n);
+    }
 };
-
-static void RegisterChatPackets()
-{
-    using net::Packet;
-    net::PacketResolver::Register({
-        Packet::MakePacketFactory<ChatMessagePacket>(static_cast<PacketProtocol>(ChatPacketProtocol::ChatMessage)),
-    });
-}
 }

@@ -24,49 +24,36 @@
 
 #pragma once
 
-#include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
-#include <boost/core/noncopyable.hpp>
-#include <skymarlin/network/Session.hpp>
+#include <functional>
+#include <unordered_map>
 
-namespace skymarlin::network
+#include <skymarlin/net/Packet.hpp>
+
+namespace skymarlin::net
 {
-using boost::asio::ip::tcp;
-
-
-struct ClientConfig
-{
-    const std::string remote_adress;
-    const unsigned short remote_port;
-};
-
-
-class Client : boost::noncopyable
+class PacketResolver final
 {
 public:
-    Client(ClientConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory);
-    virtual ~Client() = default;
-
-    void Start();
-    void Stop();
-
-    virtual void OnStart() = 0;
-    virtual void OnStop() = 0;
-
-    bool running() const { return running_; }
+    static void Register(const std::vector<std::pair<PacketProtocol, PacketFactory>>& factories);
+    static std::shared_ptr<Packet> Resolve(PacketProtocol type);
 
 private:
-    boost::asio::awaitable<void> Connect();
-
-protected:
-    const ClientConfig config_;
-    boost::asio::io_context& io_context_;
-    boost::asio::ssl::context ssl_context_ {boost::asio::ssl::context::tlsv13_client};
-    std::shared_ptr<Session> session_;
-
-private:
-    SessionFactory session_factory_;
-    tcp::endpoint remote_endpoint_;
-    std::atomic<bool> running_ {false};
+    inline static std::unordered_map<PacketProtocol, PacketFactory> factory_map_ {};
 };
+
+
+inline void PacketResolver::Register(const std::vector<std::pair<PacketProtocol, PacketFactory>>& factories)
+{
+    for (const auto& [type, factory] : factories) {
+        factory_map_[type] = factory;
+    }
+}
+
+inline std::shared_ptr<Packet> PacketResolver::Resolve(const PacketProtocol type)
+{
+    if (!factory_map_.contains(type)) {
+        return nullptr;
+    }
+    return factory_map_[type]();
+}
 }

@@ -22,12 +22,12 @@
  * SOFTWARE.
  */
 
-#include <skymarlin/network/Listener.hpp>
+#include <skymarlin/net/Listener.hpp>
 
-#include <skymarlin/network/Log.hpp>
-#include <skymarlin/network/SessionManager.hpp>
+#include <skymarlin/net/Log.hpp>
+#include <skymarlin/net/SessionManager.hpp>
 
-namespace skymarlin::network
+namespace skymarlin::net
 {
 Listener::Listener(boost::asio::io_context& io_context, boost::asio::ssl::context& ssl_context,
     const unsigned short port, SessionFactory&& session_factory)

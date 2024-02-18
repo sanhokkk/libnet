@@ -8,10 +8,10 @@ project(
 
 project_sources = [
     # network
-    'skymarlin/network/Client.cpp',
-    'skymarlin/network/Listener.cpp',
-    'skymarlin/network/Server.cpp',
-    'skymarlin/network/Session.cpp',
+    'skymarlin/net/Client.cpp',
+    'skymarlin/net/Listener.cpp',
+    'skymarlin/net/Server.cpp',
+    'skymarlin/net/Session.cpp',
 
     # protocol
     ## chat
@@ -22,7 +22,7 @@ project_sources = [
 project_tests = [
     # Unit Tests
     ## network
-    'skymarlin/network/details/BitConverter.test.cpp',
+    'skymarlin/net/details/BitConverter.test.cpp',
 
     ## protocol
     'skymarlin/protocol/auth/AuthPackets.test.cpp',

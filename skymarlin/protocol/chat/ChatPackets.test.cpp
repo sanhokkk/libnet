@@ -24,14 +24,14 @@
 
 #include <gtest/gtest.h>
 
-#include <skymarlin/network/PacketResolver.hpp>
+#include <skymarlin/net/PacketResolver.hpp>
 #include <skymarlin/protocol/chat/ChatPackets.hpp>
 
 namespace skymarlin::protocol::chat::test
 {
 TEST(ChatPackets, Register)
 {
-    using network::PacketResolver;
+    using net::PacketResolver;
 
     RegisterChatPackets();
 

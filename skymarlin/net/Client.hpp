@@ -24,25 +24,49 @@
 
 #pragma once
 
-#include <skymarlin/net/Packet.hpp>
-#include <skymarlin/net/PacketResolver.hpp>
-#include <skymarlin/protocol/chat/ChatMessagePacket.hpp>
+#include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
+#include <boost/core/noncopyable.hpp>
+#include <skymarlin/net/Session.hpp>
 
-namespace skymarlin::protocol::chat
+namespace skymarlin::net
 {
-using net::PacketLength;
-using net::PacketProtocol;
+using boost::asio::ip::tcp;
 
-enum class ChatPacketProtocol : PacketProtocol
+
+struct ClientConfig
 {
-    ChatMessage = 0x01,
+    const std::string remote_adress;
+    const unsigned short remote_port;
 };
 
-static void RegisterChatPackets()
+
+class Client : boost::noncopyable
 {
-    using net::Packet;
-    net::PacketResolver::Register({
-        Packet::MakePacketFactory<ChatMessagePacket>(static_cast<PacketProtocol>(ChatPacketProtocol::ChatMessage)),
-    });
-}
+public:
+    Client(ClientConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory);
+    virtual ~Client() = default;
+
+    void Start();
+    void Stop();
+
+    virtual void OnStart() = 0;
+    virtual void OnStop() = 0;
+
+    bool running() const { return running_; }
+
+private:
+    boost::asio::awaitable<void> Connect();
+
+protected:
+    const ClientConfig config_;
+    boost::asio::io_context& io_context_;
+    boost::asio::ssl::context ssl_context_ {boost::asio::ssl::context::tlsv13_client};
+    std::shared_ptr<Session> session_;
+
+private:
+    SessionFactory session_factory_;
+    tcp::endpoint remote_endpoint_;
+    std::atomic<bool> running_ {false};
+};
 }

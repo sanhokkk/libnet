@@ -22,13 +22,13 @@
  * SOFTWARE.
  */
 
-#include <skymarlin/network/Session.hpp>
+#include <skymarlin/net/Session.hpp>
 
-#include <skymarlin/network/Log.hpp>
-#include <skymarlin/network/PacketResolver.hpp>
-#include <skymarlin/network/SessionManager.hpp>
+#include <skymarlin/net/Log.hpp>
+#include <skymarlin/net/PacketResolver.hpp>
+#include <skymarlin/net/SessionManager.hpp>
 
-namespace skymarlin::network
+namespace skymarlin::net
 {
 Session::Session(boost::asio::io_context& io_context, Socket&& socket)
     : io_context_(io_context), socket_(std::move(socket))

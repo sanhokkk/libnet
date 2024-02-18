@@ -24,11 +24,11 @@
 
 #pragma once
 
-#include <skymarlin/network/Log.hpp>
-#include <skymarlin/network/Session.hpp>
+#include <skymarlin/net/Log.hpp>
+#include <skymarlin/net/Session.hpp>
 #include <skymarlin/thread/Map.hpp>
 
-namespace skymarlin::network
+namespace skymarlin::net
 {
 class SessionManager
 {
