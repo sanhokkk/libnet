@@ -9,14 +9,14 @@ project(
 project_sources = [
     # network
     'skymarlin/net/Client.cpp',
+    'skymarlin/net/Connection.cpp',
     'skymarlin/net/Listener.cpp',
     'skymarlin/net/Server.cpp',
-    'skymarlin/net/Session.cpp',
 
     # protocol
     ## chat
-    'skymarlin/protocol/chat/ChatMessagePacket.cpp',
-    'skymarlin/protocol/chat/proto/ChatMessage.pb.cc',
+    'skymarlin/protocol/chat/ChatMessage.cpp',
+    'skymarlin/protocol/chat/proto/Chat.pb.cc',
 ]
 
 project_tests = [
@@ -25,8 +25,8 @@ project_tests = [
     'skymarlin/net/details/BitConverter.test.cpp',
 
     ## protocol
-    'skymarlin/protocol/auth/AuthPackets.test.cpp',
-    'skymarlin/protocol/chat/ChatPackets.test.cpp',
+    'skymarlin/protocol/auth/AuthMessageTypes.test.cpp',
+    'skymarlin/protocol/chat/ChatMessageTypes.test.cpp',
 
     ## utility
     'skymarlin/utility/Map.test.cpp',

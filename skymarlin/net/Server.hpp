@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 #include <skymarlin/net/Listener.hpp>
 
 namespace skymarlin::net
@@ -40,7 +42,7 @@ struct ServerConfig
 class Server : boost::noncopyable
 {
 public:
-    Server(ServerConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory);
+    Server(ServerConfig&& config, boost::asio::io_context& io_context, ClientFactory&& client_factory);
     virtual ~Server() = default;
 
     void Start();

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package skymarlin.protocol.chat;
 
-message ChatMessage {
-  uint32 client_id = 1;
+message Chat {
+  string user_id = 1;
   string message = 2;
 }

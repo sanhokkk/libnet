@@ -22,27 +22,22 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include <gtest/gtest.h>
 
-#include <skymarlin/net/Packet.hpp>
-#include <skymarlin/net/PacketResolver.hpp>
-#include <skymarlin/protocol/chat/ChatMessagePacket.hpp>
+#include <skymarlin/net/MessageResolver.hpp>
+#include <skymarlin/protocol/chat/ChatMessageTypes.hpp>
 
-namespace skymarlin::protocol::chat
+namespace skymarlin::protocol::chat::test
 {
-using net::PacketLength;
-using net::PacketProtocol;
-
-enum class ChatPacketProtocol : PacketProtocol
+TEST(ChatPackets, Register)
 {
-    ChatMessage = 0x01,
-};
+    using net::MessageResolver;
 
-static void RegisterChatPackets()
-{
-    using net::Packet;
-    net::PacketResolver::Register({
-        Packet::MakePacketFactory<ChatMessagePacket>(static_cast<PacketProtocol>(ChatPacketProtocol::ChatMessage)),
-    });
+    RegisterChatMessages();
+
+    if (!MessageResolver::ResolveFactory(static_cast<MessageType>(ChatMessageTypes::ChatMessage))) {
+        FAIL();
+    }
 }
 }
+

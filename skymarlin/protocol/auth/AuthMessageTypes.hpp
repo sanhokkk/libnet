@@ -22,15 +22,20 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
+#pragma once
 
-#include <skymarlin/net/PacketResolver.hpp>
-#include <skymarlin/protocol/auth/AuthPackets.hpp>
+#include <skymarlin/net/Message.hpp>
+#include <skymarlin/net/MessageResolver.hpp>
 
-namespace skymarlin::protocol::auth::test
+namespace skymarlin::protocol::auth
 {
-TEST(AuthPackets, Register)
+
+enum class AuthPacketProtocol : net::MessageType {};
+
+static void RegisterAuthMessages()
 {
-    RegisterAuthPackets();
+    using net::Message;
+    net::MessageResolver::RegisterFactories({
+    });
 }
 }

@@ -22,40 +22,15 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include <gtest/gtest.h>
 
-#include <functional>
-#include <unordered_map>
+#include <skymarlin/net/MessageResolver.hpp>
+#include <skymarlin/protocol/auth/AuthMessageTypes.hpp>
 
-#include <skymarlin/net/Message.hpp>
-#include <skymarlin/net/Packet.hpp>
-
-namespace skymarlin::net
+namespace skymarlin::protocol::auth::test
 {
-class PacketResolver final
+TEST(AuthPackets, Register)
 {
-public:
-    static void Register(const std::vector<std::pair<PacketProtocol, PacketFactory>>& factories);
-    static void Register(const std::vector<std::pair<MessageType, MessageFactory>>& factories);
-    static std::shared_ptr<Packet> Resolve(PacketProtocol type);
-
-private:
-    inline static std::unordered_map<PacketProtocol, PacketFactory> factory_map_ {};
-};
-
-
-inline void PacketResolver::Register(const std::vector<std::pair<PacketProtocol, PacketFactory>>& factories)
-{
-    for (const auto& [type, factory] : factories) {
-        factory_map_[type] = factory;
-    }
-}
-
-inline std::shared_ptr<Packet> PacketResolver::Resolve(const PacketProtocol type)
-{
-    if (!factory_map_.contains(type)) {
-        return nullptr;
-    }
-    return factory_map_[type]();
+    RegisterAuthMessages();
 }
 }

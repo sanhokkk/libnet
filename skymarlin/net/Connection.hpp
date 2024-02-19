@@ -26,31 +26,42 @@
 
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
-#include <skymarlin/net/Client.hpp>
+#include <boost/core/noncopyable.hpp>
+#include <skymarlin/net/Message.hpp>
+#include <skymarlin/utility/Queue.hpp>
 
 namespace skymarlin::net
 {
 using boost::asio::ip::tcp;
+using Socket = boost::asio::ssl::stream<tcp::socket>;
 
-
-class Listener final : boost::noncopyable
+class Connection final : public std::enable_shared_from_this<Connection>, boost::noncopyable
 {
 public:
-    Listener(boost::asio::io_context& io_context, boost::asio::ssl::context& ssl_context,
-        unsigned short port, ClientFactory&& client_factory);
-    ~Listener() = default;
+    Connection(boost::asio::io_context& io_context, Socket&& socket);
+    ~Connection();
 
-    void Start();
-    void Stop();
+    void Disconnect();
+    void StartReceiveMessage();
+    void SendMessage(std::shared_ptr<Message> message);
+
+	bool connected() const { return connected_; }
+    tcp::endpoint local_endpoint() const { return socket_.lowest_layer().local_endpoint(); }
+    tcp::endpoint remote_endpoint() const { return socket_.lowest_layer().remote_endpoint(); }
 
 private:
-    boost::asio::awaitable<void> Listen();
+    boost::asio::awaitable<std::unique_ptr<Message>> ReceiveMessage();
+    boost::asio::awaitable<std::optional<MessageHeader>> ReadMessageHeader();
+    boost::asio::awaitable<std::unique_ptr<Message>> ReadMessageBody(std::unique_ptr<Message> message, MessageSize size);
+    boost::asio::awaitable<void> SendMessageQueue();
+    void HandleMessage(std::unique_ptr<Message> message);
 
     boost::asio::io_context& io_context_;
-    boost::asio::ssl::context& ssl_context_;
-    tcp::acceptor acceptor_;
-    const ClientFactory client_factory_;
+    Socket socket_;
+    std::atomic<bool> connected_ {true};
 
-    std::atomic<bool> listening_ {false};
+    byte header_buffer_[MessageHeader::HeaderSize] {};
+    utility::ConcurrentQueue<std::shared_ptr<Message>> send_queue_ {};
+    std::atomic<bool> send_queue_processing_ {false};
 };
 }

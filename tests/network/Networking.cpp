@@ -24,51 +24,40 @@
 
 #include <gtest/gtest.h>
 
+#include <boost/asio.hpp>
+#include <skymarlin/net/ClientManager.hpp>
+#include <skymarlin/net/Server.hpp>
+#include <skymarlin/utility/Log.hpp>
+
 #include <chrono>
 #include <thread>
 
-#include <boost/asio.hpp>
-#include <skymarlin/net/Client.hpp>
-#include <skymarlin/net/Log.hpp>
-#include <skymarlin/net/Server.hpp>
-#include <skymarlin/net/Session.hpp>
-
 namespace skymarlin::net::test
 {
-class TestSession final : public Session
-{
-public:
-    explicit TestSession(boost::asio::io_context& io_context, Socket&& socket)
-        : Session(io_context, std::move(socket))
-    {
-        SKYMARLIN_LOG_INFO("Session created on {}", local_endpoint().address().to_string());
-    }
-
-protected:
-    void OnOpen() override {}
-
-    void OnClose() override {}
-};
-
-class TestServer final : public Server, std::enable_shared_from_this<TestServer>
-{
-public:
-    explicit TestServer(ServerConfig&& config, boost::asio::io_context& io_context)
-        : Server(std::move(config), io_context, Session::MakeSessionFactory<TestSession>()) {}
-
-    ~TestServer() override = default;
-};
-
 class TestClient final : public Client
 {
 public:
-    explicit TestClient(ClientConfig&& config, boost::asio::io_context& io_context)
-        : Client(std::move(config), io_context, Session::MakeSessionFactory<TestSession>()) {}
+    TestClient(boost::asio::io_context& io_context, Socket&& socket)
+        : Client(io_context, std::move(socket), ++id_generator_) {}
 
     ~TestClient() override = default;
 
-    void OnStart() override {}
-    void OnStop() override {}
+    void OnStart() override {};
+    void OnStop() override {};
+
+private:
+    inline static std::atomic<ClientId> id_generator_ {0};
+};
+
+class TestServer final : public Server
+{
+public:
+    explicit TestServer(ServerConfig&& config, boost::asio::io_context& io_context)
+        : Server(std::move(config), io_context, [](boost::asio::io_context& io_context, Socket&& socket) {
+            return std::make_shared<TestClient>(io_context, std::move(socket));
+        }) {}
+
+    ~TestServer() override = default;
 };
 
 TEST(Networking, StartAndStopServer)
@@ -96,27 +85,5 @@ TEST(Networking, StartAndStopServer)
     io_work_guard.reset();
 
     if (server_thread.joinable()) server_thread.join();
-}
-
-TEST(Networking, StartAndStopClient)
-{
-    boost::asio::io_context io_context {};
-    auto io_work_guard = make_work_guard(io_context);
-
-    std::thread client_thread([&io_context] {
-        auto make_client_config = []() -> ClientConfig {
-            return {.remote_adress = "localhost", .remote_port = 55555};
-        };
-
-        auto client = TestClient(make_client_config(), io_context);
-        client.Start();
-
-        io_context.run();
-    });
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
-    io_work_guard.reset();
-
-    if (client_thread.joinable()) client_thread.join();
 }
 }

@@ -24,17 +24,17 @@
 
 #include <skymarlin/net/Listener.hpp>
 
-#include <skymarlin/net/Log.hpp>
-#include <skymarlin/net/SessionManager.hpp>
+#include <skymarlin/net/ClientManager.hpp>
+#include <skymarlin/utility/Log.hpp>
 
 namespace skymarlin::net
 {
 Listener::Listener(boost::asio::io_context& io_context, boost::asio::ssl::context& ssl_context,
-    const unsigned short port, SessionFactory&& session_factory)
+    const unsigned short port, ClientFactory&& client_factory)
     : io_context_(io_context),
     ssl_context_(ssl_context),
     acceptor_(io_context, tcp::endpoint(tcp::v6(), port)),
-    session_factory_(std::move(session_factory)) {}
+    client_factory_(std::move(client_factory)) {}
 
 void Listener::Start()
 {
@@ -74,14 +74,14 @@ boost::asio::awaitable<void> Listener::Listen()
             continue;
         }
 
-        auto session = session_factory_(io_context_, std::move(socket));
-        if (!session) {
-            SKYMARLIN_LOG_ERROR("Failed to create session after accepting");
+        auto client = client_factory_(io_context_, std::move(socket));
+        if (!client) {
+            SKYMARLIN_LOG_ERROR("Failed to create a client on accept");
             co_return;
         }
 
-        session->Open();
-        SessionManager::AddSession(session);
+        client->Start();
+        ClientManager::AddClient(client);
     }
 }
 }

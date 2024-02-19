@@ -25,26 +25,20 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
 #include <boost/core/noncopyable.hpp>
-#include <skymarlin/net/Session.hpp>
+#include <skymarlin/net/Connection.hpp>
 
 namespace skymarlin::net
 {
-using boost::asio::ip::tcp;
+class Client;
 
-
-struct ClientConfig
-{
-    const std::string remote_adress;
-    const unsigned short remote_port;
-};
-
+using ClientId = uint32_t;
+using ClientFactory = std::function<std::shared_ptr<Client>(boost::asio::io_context&, Socket&&)>;
 
 class Client : boost::noncopyable
 {
 public:
-    Client(ClientConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory);
+    Client(boost::asio::io_context& io_context, Socket&& socket, ClientId id);
     virtual ~Client() = default;
 
     void Start();
@@ -53,20 +47,14 @@ public:
     virtual void OnStart() = 0;
     virtual void OnStop() = 0;
 
+    ClientId id() const { return id_; }
     bool running() const { return running_; }
 
-private:
-    boost::asio::awaitable<void> Connect();
-
 protected:
-    const ClientConfig config_;
-    boost::asio::io_context& io_context_;
-    boost::asio::ssl::context ssl_context_ {boost::asio::ssl::context::tlsv13_client};
-    std::shared_ptr<Session> session_;
+    Connection connection_;
 
 private:
-    SessionFactory session_factory_;
-    tcp::endpoint remote_endpoint_;
-    std::atomic<bool> running_ {false};
+    const ClientId id_;
+    bool running_ {false};
 };
 }

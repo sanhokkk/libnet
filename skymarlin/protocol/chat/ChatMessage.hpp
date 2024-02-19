@@ -24,20 +24,26 @@
 
 #pragma once
 
-#include <skymarlin/net/Packet.hpp>
-#include <skymarlin/net/PacketResolver.hpp>
+#include <skymarlin/net/Message.hpp>
+#include <skymarlin/protocol/chat/proto/Chat.pb.h>
 
-namespace skymarlin::protocol::auth
+#include <string_view>
+
+namespace skymarlin::protocol::chat
 {
-using net::PacketLength;
-using net::PacketProtocol;
-
-enum class AuthPacketProtocol : PacketProtocol {};
-
-static void RegisterAuthPackets()
+class ChatMessage final : public net::Message
 {
-    using net::Packet;
-    net::PacketResolver::Register({
-    });
-}
+public:
+    ChatMessage();
+    ChatMessage(std::string_view user_id, std::string_view message);
+    ~ChatMessage() override = default;
+
+    bool Serialize(byte* dest, size_t size) const override;
+    bool Deserialize(const byte* src, size_t size) override;
+
+    net::MessageSize size() const override;
+
+private:
+    Chat chat_ {};
+};
 }

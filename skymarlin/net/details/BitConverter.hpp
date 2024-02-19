@@ -27,13 +27,17 @@
 #include <algorithm>
 #include <bit>
 #include <cstring>
+#include <cstdint>
+
+namespace skymarlin
+{
+using byte = uint8_t;
+}
 
 namespace skymarlin::net::details
 {
 template <typename T>
 concept NumericType = std::is_arithmetic_v<T>;
-
-using byte = uint8_t;
 
 class BitConverter
 {

@@ -24,65 +24,26 @@
 
 #include <skymarlin/net/Client.hpp>
 
-#include <skymarlin/net/Log.hpp>
-
 namespace skymarlin::net
 {
-Client::Client(ClientConfig&& config, boost::asio::io_context& io_context, SessionFactory&& session_factory)
-    : config_(std::move(config)), io_context_(io_context), session_factory_(std::move(session_factory))
-{
-    ssl_context_.set_default_verify_paths();
-}
+Client::Client(boost::asio::io_context& io_context, Socket&& socket, const ClientId id)
+    : connection_(io_context, std::move(socket)), id_(id) {}
 
 void Client::Start()
 {
     running_ = true;
+    connection_.StartReceiveMessage();
 
-    co_spawn(io_context_, Connect(), boost::asio::detached);
-    // OnStart();
+    OnStart();
 }
 
 void Client::Stop()
 {
-    if (!running_.exchange(false)) return;
-
-    SKYMARLIN_LOG_INFO("Stopping the client...");
+    if (!running_) return;
     running_ = false;
 
-    if (session_) {
-        co_spawn(io_context_, session_->Close(), boost::asio::detached);
-    }
-}
+    connection_.Disconnect();
 
-boost::asio::awaitable<void> Client::Connect()
-{
-    auto socket = Socket(io_context_, ssl_context_);
-    auto resolver = tcp::resolver(io_context_);
-
-    SKYMARLIN_LOG_INFO("Trying to connect to {}:{}", config_.remote_adress, config_.remote_port);
-    const auto [ec, endpoints] = co_await resolver.async_resolve(config_.remote_adress,
-        std::format("{}", config_.remote_port), as_tuple(boost::asio::use_awaitable));
-    if (ec) {
-        SKYMARLIN_LOG_ERROR("Error on resolve: {}", ec.what());
-        Stop();
-        co_return;
-    }
-
-    if (const auto [ec, endpoint] = co_await async_connect(socket.lowest_layer(), endpoints,
-        as_tuple(boost::asio::use_awaitable)); ec) {
-        SKYMARLIN_LOG_ERROR("Error on connect: {}", ec.what());
-        Stop();
-        co_return;
-    }
-
-    if (const auto [ec] = co_await socket.async_handshake(boost::asio::ssl::stream_base::client,
-        as_tuple(boost::asio::use_awaitable)); ec) {
-        SKYMARLIN_LOG_ERROR("Error on handshake: {}", ec.what());
-        Stop();
-        co_return;
-    }
-
-    session_ = session_factory_(io_context_, std::move(socket));
-    session_->Open();
+    OnStop();
 }
 }
