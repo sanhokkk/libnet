@@ -43,6 +43,7 @@ public:
 
     void Start();
     void Stop();
+    void SendMessage(std::shared_ptr<Message> message);
 
     virtual void OnStart() = 0;
     virtual void OnStop() = 0;

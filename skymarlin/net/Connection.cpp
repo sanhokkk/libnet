@@ -41,6 +41,8 @@ Connection::~Connection()
 
 void Connection::StartReceiveMessage()
 {
+    if (!connected_) return;
+
     co_spawn(io_context_, [this]()-> boost::asio::awaitable<void> {
         while (connected_) {
             auto message = co_await ReceiveMessage();

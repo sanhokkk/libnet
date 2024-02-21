@@ -46,4 +46,9 @@ void Client::Stop()
 
     OnStop();
 }
+
+void Client::SendMessage(std::shared_ptr<Message> message)
+{
+    connection_.SendMessage(std::move(message));
+}
 }
