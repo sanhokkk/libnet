@@ -46,7 +46,7 @@ private:
     inline static std::unordered_map<MessageType, MessageFactory> factory_map_ {};
     inline static std::unordered_map<MessageType, MessageHandler> handler_map_ {};
 
-    inline static MessageHandler empty_handler_ {};
+    inline static const MessageHandler empty_handler_ {};
 };
 
 

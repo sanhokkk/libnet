@@ -30,15 +30,7 @@
 namespace skymarlin::net
 {
 Connection::Connection(boost::asio::io_context& io_context, Socket&& socket)
-    : io_context_(io_context), socket_(std::move(socket))
-{
-    try {
-        socket_.lowest_layer().set_option(tcp::no_delay(true));
-    }
-    catch (const boost::system::system_error& e) {
-        SKYMARLIN_LOG_ERROR("Error setting socket no-delay: {}", e.what());
-    }
-}
+    : io_context_(io_context), socket_(std::move(socket)) {}
 
 Connection::~Connection()
 {
@@ -79,6 +71,36 @@ void Connection::SendMessage(std::shared_ptr<Message> message)
 
     if (send_queue_processing_.exchange(true)) return;
     co_spawn(io_context_, SendMessageQueue(), boost::asio::detached);
+}
+
+boost::asio::awaitable<bool> Connection::Connect(Connection& connection, std::string_view host, uint16_t port)
+{
+    tcp::resolver resolver {connection.io_context_};
+
+    SKYMARLIN_LOG_INFO("Trying to connect to {}:{}", host, port);
+    const auto [ec, endpoints] = co_await resolver.async_resolve(host,
+        std::format("{}", port), as_tuple(boost::asio::use_awaitable));
+    if (ec) {
+        SKYMARLIN_LOG_ERROR("Error on resolve: {}", ec.what());
+        connection.connected_ = false;
+        co_return false;
+    }
+
+    if (const auto [ec, endpoint] = co_await async_connect(connection.socket_.lowest_layer(), endpoints,
+        as_tuple(boost::asio::use_awaitable)); ec) {
+        SKYMARLIN_LOG_ERROR("Error on connect: {}", ec.what());
+        connection.connected_ = false;
+        co_return false;
+    }
+
+    if (const auto [ec] = co_await connection.socket_.async_handshake(boost::asio::ssl::stream_base::client,
+        as_tuple(boost::asio::use_awaitable)); ec) {
+        SKYMARLIN_LOG_ERROR("Error on handshake: {}", ec.what());
+        connection.Disconnect();
+        co_return false;
+    }
+
+    co_return true;
 }
 
 boost::asio::awaitable<void> Connection::SendMessageQueue()

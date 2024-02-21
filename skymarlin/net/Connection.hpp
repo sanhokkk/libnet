@@ -45,6 +45,8 @@ public:
     void StartReceiveMessage();
     void SendMessage(std::shared_ptr<Message> message);
 
+    static boost::asio::awaitable<bool> Connect(Connection& connection, std::string_view host, uint16_t port);
+
 	bool connected() const { return connected_; }
     tcp::endpoint local_endpoint() const { return socket_.lowest_layer().local_endpoint(); }
     tcp::endpoint remote_endpoint() const { return socket_.lowest_layer().remote_endpoint(); }

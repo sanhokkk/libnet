@@ -27,7 +27,6 @@
 #include <boost/asio.hpp>
 #include <skymarlin/net/ClientManager.hpp>
 #include <skymarlin/net/Server.hpp>
-#include <skymarlin/utility/Log.hpp>
 
 #include <chrono>
 #include <thread>
@@ -85,5 +84,24 @@ TEST(Networking, StartAndStopServer)
     io_work_guard.reset();
 
     if (server_thread.joinable()) server_thread.join();
+}
+
+TEST(Networking, ConnectionFail)
+{
+    boost::asio::io_context io_context {};
+    boost::asio::ssl::context ssl_context {boost::asio::ssl::context::tlsv13_client};
+    Connection connection {io_context, Socket(io_context, ssl_context)};
+
+    bool fail = false;
+    co_spawn(io_context, [&connection, &fail]() -> boost::asio::awaitable<void> {
+        const auto result = co_await Connection::Connect(connection, "localhost", 55555);
+        if (result) {
+            fail = true;
+        }
+    }, boost::asio::detached);
+
+    if (fail) FAIL();
+
+    io_context.run();
 }
 }
