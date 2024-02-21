@@ -49,6 +49,7 @@ public:
 
     ClientId id() const { return id_; }
     bool running() const { return running_; }
+    tcp::endpoint remote_endpoint() const { return connection_.remote_endpoint(); }
 
 protected:
     Connection connection_;
