@@ -43,6 +43,9 @@ public:
 
     net::MessageSize size() const override;
 
+    std::string_view user_id() const { return chat_.user_id(); }
+    std::string_view message() const { return chat_.message(); }
+
 private:
     Chat chat_ {};
 };

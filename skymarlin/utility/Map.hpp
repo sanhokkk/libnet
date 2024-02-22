@@ -81,8 +81,8 @@ public:
         return map_.contains(key);
     }
 
-    template <typename Callable, typename... Args> requires std::invocable<Callable, ValueType&, Args...>
-    void ForEachAll(Callable&& function, Args&&... args)
+    template <typename Function, typename... Args> requires std::invocable<Function, ValueType&, Args...>
+    void ForEachAll(Function&& function, Args&&... args)
     {
         std::shared_lock lock(mutex);
 
@@ -91,8 +91,8 @@ public:
         }
     }
 
-    template <typename Callable, typename... Args> requires std::invocable<Callable, ValueType&, Args...>
-    void ForEachSome(std::function<bool(const ValueType&)>&& filter, Callable&& function, Args&&... args)
+    template <typename Function, typename... Args> requires std::invocable<Function, ValueType&, Args...>
+    void ForEachSome(std::function<bool(const ValueType&)>&& filter, Function&& function, Args&&... args)
     {
         std::shared_lock lock(mutex);
 
