@@ -46,6 +46,7 @@ namespace skymarlin::utility
 #define SKYMARLIN_LOG_DEBUG(format, ...) \
     spdlog::debug(format __VA_OPT__(,) __VA_ARGS__)
 
+
 class Log final
 {
 public:

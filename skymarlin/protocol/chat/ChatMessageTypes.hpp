@@ -34,7 +34,7 @@ using net::MessageType;
 
 enum class ChatMessageTypes : MessageType
 {
-    ChatMessage = 0x01,
+    ChatMessage = 0xC000,
 };
 
 static void RegisterChatMessages()

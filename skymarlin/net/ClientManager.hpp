@@ -39,11 +39,13 @@ public:
     static std::shared_ptr<Client> GetClient(ClientId id);
     static void ClearClients();
 
-    template <typename... Args>
-    static void ForEachAllClient(std::function<void(std::shared_ptr<Client>&)>&& function, Args&&... args);
-    template <typename... Args>
-    static void ForEachSomeClient(std::function<bool(const std::shared_ptr<Client>&)>&& filter,
-        std::function<void(std::shared_ptr<Client>&)>&& function, Args&&... args);
+    template <typename Function, typename... Args> requires std::invocable<Function, std::shared_ptr<Client>&, Args...>
+    static void ForEachAllClient(Function&& function, Args&&... args);
+    template <typename Filter, typename Function, typename... Args>
+        requires std::invocable<Filter, const std::shared_ptr<Client>&>
+        && std::same_as<bool, std::invoke_result_t<Filter, const std::shared_ptr<Client>&>>
+        && std::invocable<Function, std::shared_ptr<Client>&, Args...>
+    static void ForEachSomeClient(Filter&& filter, Function&& function, Args&&... args);
 
 private:
     inline static utility::ConcurrentMap<ClientId, std::shared_ptr<Client>> clients_;
@@ -88,16 +90,18 @@ inline void ClientManager::ClearClients()
     clients_.Clear();
 }
 
-template <typename... Args>
-void ClientManager::ForEachAllClient(std::function<void(std::shared_ptr<Client>&)>&& function, Args&&... args)
+template <typename Function, typename... Args> requires std::invocable<Function, std::shared_ptr<Client>&, Args...>
+void ClientManager::ForEachAllClient(Function&& function, Args&&... args)
 {
-    clients_.ForEachAll(std::move(function), std::move(args)...);
+    clients_.ForEachAll(std::forward<Function>(function), std::forward<Args>(args)...);
 }
 
-template <typename... Args>
-void ClientManager::ForEachSomeClient(std::function<bool(const std::shared_ptr<Client>&)>&& filter,
-    std::function<void(std::shared_ptr<Client>&)>&& function, Args&&... args)
+template <typename Filter, typename Function, typename... Args>
+    requires std::invocable<Filter, const std::shared_ptr<Client>&>
+    && std::same_as<bool, std::invoke_result_t<Filter, const std::shared_ptr<Client>&>>
+    && std::invocable<Function, std::shared_ptr<Client>&, Args...>
+void ClientManager::ForEachSomeClient(Filter&& filter, Function&& function, Args&&... args)
 {
-    clients_.ForEachSome(std::move(filter), std::move(function), std::move(args)...);
+    clients_.ForEachSome(std::forward<Filter>(filter), std::forward<Function>(function), std::forward<Args>(args)...);
 }
 }

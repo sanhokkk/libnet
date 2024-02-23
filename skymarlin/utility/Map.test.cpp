@@ -81,12 +81,12 @@ TEST(ConcurrentMap, ForEachSome)
     map.InsertOrAssign(2, 21);
     map.InsertOrAssign(3, 30);
 
-    auto odd_numbers = [](const int& n) {
+    auto odd_numbers = [](const int& n) -> bool {
         return n % 2 != 0;
     };
 
     int increment = 5;
-    map.ForEachSome(std::move(odd_numbers), [] (int& value, const int add) {
+    map.ForEachSome(std::move(odd_numbers), [](int& value, const int add) {
         value += add;
     }, increment);
 

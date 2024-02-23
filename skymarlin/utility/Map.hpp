@@ -91,13 +91,16 @@ public:
         }
     }
 
-    template <typename Function, typename... Args> requires std::invocable<Function, ValueType&, Args...>
-    void ForEachSome(std::function<bool(const ValueType&)>&& filter, Function&& function, Args&&... args)
+    template <typename Filter, typename Function, typename... Args>
+        requires std::invocable<Filter, const ValueType&>
+        && std::same_as<bool, std::invoke_result_t<Filter, const ValueType&>>
+        && std::invocable<Function, ValueType&, Args...>
+    void ForEachSome(Filter&& filter, Function&& function, Args&&... args)
     {
         std::shared_lock lock(mutex);
 
         auto view = map_ | std::views::filter(
-                 [&filter](const std::pair<KeyType, ValueType>& pair) { return filter(pair.second); });
+            [&filter](const std::pair<KeyType, ValueType>& pair) { return filter(pair.second); });
         for (auto& [_, value] : view) {
             function(value, args...);
         }
