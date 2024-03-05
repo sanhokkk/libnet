@@ -84,7 +84,7 @@ add_custom_command(
 
 ### Test ###
 if (NOT IS_SUBPROJECT)
-    add_executable(test
+    add_executable(tests
         # net
         skymarlin/net/Server.test.cpp
         skymarlin/net/Client.test.cpp
@@ -94,12 +94,12 @@ if (NOT IS_SUBPROJECT)
         skymarlin/util/Map.test.cpp
         skymarlin/util/MemoryPool.test.cpp
         skymarlin/util/Queue.test.cpp)
-    target_compile_features(test PRIVATE cxx_std_20)
+    target_compile_features(tests PRIVATE cxx_std_20)
 
     if (MSVC)
-        target_compile_options(test PRIVATE /W4)
+        target_compile_options(tests PRIVATE /W4)
     else ()
-        target_compile_options(test PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(tests PRIVATE -Wall -Wextra -Wpedantic)
     endif ()
 
     FetchContent_Declare(
@@ -109,5 +109,5 @@ if (NOT IS_SUBPROJECT)
     )
     FetchContent_MakeAvailable(Catch2)
 
-    target_link_libraries(test PRIVATE libnet Catch2::Catch2WithMain)
+    target_link_libraries(tests PRIVATE libnet Catch2::Catch2WithMain)
 endif ()
