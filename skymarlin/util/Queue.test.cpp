@@ -22,12 +22,14 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 #include <skymarlin/util/Queue.hpp>
+
+#include <thread>
 
 namespace skymarlin::util::test
 {
-TEST(ConcurrentQueue, ThreadSafety)
+TEST_CASE("Thread safety", "ConcurrentQueue")
 {
     ConcurrentQueue<int> queue {};
 
@@ -48,8 +50,6 @@ TEST(ConcurrentQueue, ThreadSafety)
     t1.join();
     t2.join();
 
-    if (!queue.empty()) {
-        FAIL();
-    }
+    REQUIRE(queue.empty());
 }
 }

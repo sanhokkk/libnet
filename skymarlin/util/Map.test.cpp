@@ -22,12 +22,14 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 #include <skymarlin/util/Map.hpp>
+
+#include <thread>
 
 namespace skymarlin::util::test
 {
-TEST(ConcurrentMap, ThreadSafety)
+TEST_CASE("Insert/Erase thread safety", "ConcurrentMap")
 {
     ConcurrentMap<int, int> map {};
 
@@ -48,12 +50,10 @@ TEST(ConcurrentMap, ThreadSafety)
     t1.join();
     t2.join();
 
-    if (!map.empty()) {
-        FAIL();
-    }
+    REQUIRE(map.empty());
 }
 
-TEST(ConcurrentMap, ForEachAll)
+TEST_CASE("ForEachAll", "ConcurrentMap")
 {
     ConcurrentMap<int, int> map {};
     map.InsertOrAssign(1, 10);
@@ -69,12 +69,12 @@ TEST(ConcurrentMap, ForEachAll)
     map.TryGet(1, v1);
     map.TryGet(2, v2);
     map.TryGet(3, v3);
-    ASSERT_EQ(v1, 15);
-    ASSERT_EQ(v2, 25);
-    ASSERT_EQ(v3, 35);
+    REQUIRE(v1 == 15);
+    REQUIRE(v2 == 25);
+    REQUIRE(v3 == 35);
 }
 
-TEST(ConcurrentMap, ForEachSome)
+TEST_CASE("ForEachSome", "ConcurrentMap")
 {
     ConcurrentMap<int, int> map {};
     map.InsertOrAssign(1, 10);
@@ -94,8 +94,8 @@ TEST(ConcurrentMap, ForEachSome)
     map.TryGet(1, v1);
     map.TryGet(2, v2);
     map.TryGet(3, v3);
-    ASSERT_EQ(v1, 10);
-    ASSERT_EQ(v2, 26);
-    ASSERT_EQ(v3, 30);
+    REQUIRE(v1 == 10);
+    REQUIRE(v2 == 26);
+    REQUIRE(v3 == 30);
 }
 }

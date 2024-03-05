@@ -22,12 +22,12 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 #include <skymarlin/util/BitConverter.hpp>
 
 namespace skymarlin::util::test
 {
-TEST(BitConverter, NumericReadWrite)
+TEST_CASE("Numeric read and write", "Bitconverter")
 {
     constexpr size_t buffer_size = 64;
     byte buffer[buffer_size]{};
@@ -46,13 +46,13 @@ TEST(BitConverter, NumericReadWrite)
     // wpos += sizeof(byte);
 
     size_t rpos{0};
-    ASSERT_EQ(u_1, BitConverter::Read<uint64_t>(buffer + rpos));
+    REQUIRE(u_1 == BitConverter::Read<uint64_t>(buffer + rpos));
     rpos += sizeof(uint64_t);
 
-    ASSERT_EQ(f_1, BitConverter::Read<float>(buffer + rpos));
+    REQUIRE(f_1 == BitConverter::Read<float>(buffer + rpos));
     rpos += sizeof(float);
 
-    ASSERT_EQ(b_1, BitConverter::Read<uint8_t>(buffer + rpos));
+    REQUIRE(b_1 == BitConverter::Read<uint8_t>(buffer + rpos));
     // rpos += sizeof(uint8_t);
 }
 }
