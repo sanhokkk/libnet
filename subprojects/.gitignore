@@ -1,0 +1,6 @@
+*
+!.gitignore
+
+!abseil-cpp.wrap
+!protobuf.wrap
+!spdlog.wrap

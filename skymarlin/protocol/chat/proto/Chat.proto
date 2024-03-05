@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package skymarlin.protocol.chat;
+
+message Chat {
+  string user_id = 1;
+  string message = 2;
+}
