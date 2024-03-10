@@ -15,6 +15,7 @@ class Client : boost::noncopyable
 {
 public:
     Client(boost::asio::io_context& io_context, Socket&& socket, ClientId id);
+
     virtual ~Client() = default;
 
     void Start();
@@ -32,6 +33,25 @@ protected:
 
 private:
     const ClientId id_;
-    bool running_ {false};
+    std::atomic<bool> running_ {false};
 };
+
+
+inline Client::Client(boost::asio::io_context &io_context, Socket &&socket, const ClientId id):
+    connection_(io_context, std::move(socket)), id_(id) {}
+
+inline void Client::Start() {
+    running_ = true;
+    connection_.StartReceiveMessage();
+
+    OnStart();
+}
+
+inline void Client::Stop() {
+    if (!running_.exchange(false)) return;
+
+    connection_.Disconnect();
+
+    OnStop();
+}
 }

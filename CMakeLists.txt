@@ -13,26 +13,15 @@ project(libnet
 
 
 ### Target ###
-add_library(libnet)
-target_compile_features(libnet PRIVATE cxx_std_20)
+add_library(libnet INTERFACE)
+target_compile_features(libnet INTERFACE cxx_std_20)
 if (MSVC)
-    target_compile_options(libnet PRIVATE /W4)
+    target_compile_options(libnet INTERFACE /W4)
 else ()
-    target_compile_options(libnet PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(libnet INTERFACE -Wall -Wextra -Wpedantic)
 endif ()
 
-target_sources(libnet
-    PRIVATE
-    # net
-    skymarlin/net/Client.cpp
-    skymarlin/net/Connection.cpp
-    skymarlin/net/Listener.cpp
-    skymarlin/net/Server.cpp
-
-    # utility
-    skymarlin/util/MemoryPool.cpp)
-
-target_include_directories(libnet PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(libnet INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 
 ### Dependency ###
@@ -65,21 +54,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
+#TODO: Chagne public to interface?
 target_link_libraries(libnet
-    PRIVATE
+    INTERFACE
     Boost::asio
+    spdlog
+    flatbuffers
     OpenSSL::SSL
     OpenSSL::Crypto
-    flatbuffers
-    spdlog)
-
-### Schema ###
-add_custom_command(
-    TARGET libnet
-    PRE_BUILD
-#    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/flatbuffers
-#    COMMAND flatc --cpp -o ${CMAKE_CURRENT_SOURCE_DIR}/skymarlin/msg ${CMAKE_CURRENT_SOURCE_DIR}/skymarlin/chat/schema/Chat.fbs
-    COMMENT "Hey YOO!!!!!!!!!!!!!!!!!!!!!!!"
 )
 
 ### Test ###
