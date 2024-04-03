@@ -1,0 +1,7 @@
+namespace skymarlin.net.test;
+
+table SimpleMessage {
+    password:uint32;
+}
+
+root_type SimpleMessage;

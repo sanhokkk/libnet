@@ -1,6 +1,0 @@
-namespace skymarlin.msg.chat
-
-table Chat {
-    user_id: string,
-    text: string
-}

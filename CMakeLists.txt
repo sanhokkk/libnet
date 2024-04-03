@@ -54,7 +54,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
-#TODO: Chagne public to interface?
 target_link_libraries(libnet
     INTERFACE
     Boost::asio
@@ -64,18 +63,17 @@ target_link_libraries(libnet
     OpenSSL::Crypto
 )
 
+
 ### Test ###
 if (NOT IS_SUBPROJECT)
     add_executable(tests
-        # net
-        skymarlin/net/Server.test.cpp
-        skymarlin/net/Client.test.cpp
-
-        # utility
+        # util
         skymarlin/util/BitConverter.test.cpp
         skymarlin/util/Map.test.cpp
-        skymarlin/util/MemoryPool.test.cpp
-        skymarlin/util/Queue.test.cpp)
+        skymarlin/util/Queue.test.cpp
+
+        # integration
+        test/Network.cpp)
     target_compile_features(tests PRIVATE cxx_std_20)
 
     if (MSVC)

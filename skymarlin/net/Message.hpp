@@ -2,73 +2,60 @@
 
 #include <boost/core/noncopyable.hpp>
 #include <skymarlin/util/BitConverter.hpp>
-#include <skymarlin/util/Memory.hpp>
 
-#include <functional>
+#include <limits>
 
 namespace skymarlin::net {
 using MessageType = uint16_t;
 using MessageSize = uint16_t;
 
-using util::Memory;
-
 
 struct MessageHeader {
-    MessageType type{0};
-    MessageSize size{0};
+    const MessageType type;
+    const MessageSize size;
 
     static constexpr size_t HEADER_SIZE = sizeof(decltype(type)) + sizeof(decltype(size));
 
-    static MessageHeader ReadHeader(const std::array<byte, HEADER_SIZE>& src);
-
-    static void WriteHeader(std::array<byte, HEADER_SIZE>& dest, const MessageHeader &src);
+    static MessageHeader ReadHeader(std::span<byte, HEADER_SIZE> src);
+    static void WriteHeader(std::span<byte, HEADER_SIZE> dest, const MessageHeader& src);
 };
 
 
-class Message : boost::noncopyable {
+class Message final : boost::noncopyable {
 public:
-    Message(std::vector<byte> &&buffer, MessageHeader header)
+    Message(std::vector<byte>&& buffer, const MessageHeader header)
         : buffer_(std::move(buffer)), header_(header) {}
 
-    virtual ~Message() {
-        //TODO: return `buffer_` for reuse
-    }
+    const MessageHeader& header() const { return header_; }
+    std::span<const byte> buffer() const { return {buffer_}; }
 
-    const MessageHeader &header() const { return header_; }
-    std::vector<byte>& buffer() { return buffer_; }
-
-protected:
-    std::vector<byte> buffer_;
+    static constexpr size_t MAX_SIZE = std::numeric_limits<MessageSize>::max();
 
 private:
+    std::vector<byte> buffer_;
     const MessageHeader header_;
 };
 
 
-inline MessageHeader MessageHeader::ReadHeader(const std::array<byte, HEADER_SIZE>& src) {
-    using util::BitConverter;
+inline MessageHeader MessageHeader::ReadHeader(const std::span<byte, HEADER_SIZE> src) {
+    size_t pos {0};
 
-    MessageHeader header{};
-    size_t pos{0};
-
-    header.type = BitConverter::Read<MessageType>(src.data() + pos);
+    auto type = util::BitConverter::Read<MessageType>(src.data() + pos);
     pos += sizeof(MessageType);
 
-    header.size = BitConverter::Read<MessageSize>(src.data() + pos);
+    auto size = util::BitConverter::Read<MessageSize>(src.data() + pos);
     pos += sizeof(MessageSize);
 
-    return header;
+    return {.type = type, .size = size};
 }
 
-inline void MessageHeader::WriteHeader(std::array<byte, HEADER_SIZE>& dest, const MessageHeader &src) {
-    using util::BitConverter;
+inline void MessageHeader::WriteHeader(std::span<byte, HEADER_SIZE> dest, const MessageHeader& src) {
+    size_t pos {0};
 
-    size_t pos{0};
-
-    BitConverter::Write<MessageSize>(src.size, dest.data() + pos);
+    util::BitConverter::Write<MessageSize>(src.size, dest.data() + pos);
     pos += sizeof(MessageSize);
 
-    BitConverter::Write<MessageType>(src.type, dest.data() + pos);
+    util::BitConverter::Write<MessageType>(src.type, dest.data() + pos);
     pos += sizeof(MessageType);
 }
 }
