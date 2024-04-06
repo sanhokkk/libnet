@@ -44,7 +44,7 @@ inline Connection::Connection(boost::asio::io_context& io_context, tcp::socket&&
                               util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue,
                               std::function<void()>&& on_message_received)
     : io_context_(io_context), socket_(std::move(socket)),
-      OnMessageReceived(std::move(on_message_received)), receive_queue_(receive_queue) {}
+      receive_queue_(receive_queue), OnMessageReceived(std::move(on_message_received)) {}
 
 inline Connection::~Connection() {
     if (connected_) {

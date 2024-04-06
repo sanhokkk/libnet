@@ -42,6 +42,8 @@ inline Server::Server(ServerConfig&& config, boost::asio::io_context& io_context
 inline void Server::Start() {
     running_ = true;
     listener_.Start();
+
+    OnStart();
 }
 
 inline void Server::Stop() {
@@ -50,5 +52,7 @@ inline void Server::Stop() {
 
     listener_.Stop();
     ClientManager::ClearClients();
+
+    OnStop();
 }
 }

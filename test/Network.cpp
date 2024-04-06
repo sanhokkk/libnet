@@ -5,6 +5,8 @@
 
 #include "SimpleMessage.hpp"
 
+#include <chrono>
+
 namespace skymarlin::net::test {
 class SimpleClient final : public Client {
 public:
@@ -17,22 +19,22 @@ private:
                            remote_endpoint().port());
     }
 
-    void OnStop() override {}
+    void OnStop() override {
+        SKYMARLIN_LOG_INFO("SimpleClient stopping");
+    }
 
     void HandleMessage(std::vector<uint8_t>&& buffer) override {
         flatbuffers::Verifier verifier {buffer.data(), buffer.size()};
-        bool ok = VerifyMessageBuffer(verifier);
+        if (!VerifyMessageBuffer(verifier)) FAIL();
 
         const auto message = GetMessage(buffer.data());
-        bool ok2 = VerifyMessageType(verifier, message, MessageType::SimpleMessage);
-
         const auto message_type = message->message_type();
-        if (message_type != MessageType::SimpleMessage) {
-            FAIL();
-        }
+        if (message_type != MessageType::SimpleMessage) FAIL();
 
         const auto simple_message = message->message_as<SimpleMessage>();
         SKYMARLIN_LOG_INFO("hello world: {} {}", simple_message->hello()->c_str(), simple_message->world()->c_str());
+
+        Stop();
     }
 };
 
@@ -42,15 +44,23 @@ public:
         : Server(std::move(config), io_context, std::move(client_factory)) {}
 
 private:
-    void OnStart() override {}
-    void OnStop() override {}
+    void OnStart() override {
+        co_spawn(io_context_, [this]()->boost::asio::awaitable<void> {
+            boost::asio::steady_timer timer(io_context_, std::chrono::milliseconds(500));
+            co_await timer.async_wait(boost::asio::use_awaitable);
+
+            Stop();
+        }, boost::asio::detached);
+    }
+    void OnStop() override {
+        SKYMARLIN_LOG_INFO("SimpleServer stopping");
+    }
 };
 
 TEST_CASE("Simple message exchange", "Network") {
     constexpr unsigned short PORT = 55555;
 
     boost::asio::io_context server_context {};
-
     SimpleServer server {
         ServerConfig(PORT),
         server_context,
@@ -58,12 +68,11 @@ TEST_CASE("Simple message exchange", "Network") {
             return std::make_shared<SimpleClient>(io_context, std::move(socket), 0);
         }
     };
+    server.Start();
 
     boost::asio::io_context client_context {};
     util::ConcurrentQueue<std::vector<uint8_t>> client_receive_queue {}; // Not used
-    Connection client_connection {client_context, tcp::socket {client_context}, client_receive_queue, []{}};
-
-    server.Start();
+    Connection client_connection {client_context, tcp::socket {client_context}, client_receive_queue, [] {}};
 
     co_spawn(client_context, [&client_connection]()-> boost::asio::awaitable<void> {
         if (const auto result = co_await Connection::Connect(client_connection, "localhost", PORT); !result) {
@@ -73,12 +82,13 @@ TEST_CASE("Simple message exchange", "Network") {
         // Send SimpleMessage
         flatbuffers::FlatBufferBuilder builder(64);
 
-        auto simple_message = CreateSimpleMessage(builder, builder.CreateString("hello"), builder.CreateString("world"));
+        auto simple_message =
+                CreateSimpleMessage(builder, builder.CreateString("hello"), builder.CreateString("world"));
         builder.FinishSizePrefixed(CreateMessage(builder, MessageType::SimpleMessage, simple_message.Union()));
 
-        SKYMARLIN_LOG_INFO("Send {} bytes", builder.GetSize());
-
-        client_connection.SendMessage(std::make_shared<flatbuffers::DetachedBuffer>(builder.Release()));
+        auto buffer = std::make_shared<flatbuffers::DetachedBuffer>(builder.Release());
+        SKYMARLIN_LOG_INFO("Send {} bytes", buffer->size());
+        client_connection.SendMessage(buffer);
     }, boost::asio::detached);
 
     std::thread t1([&server_context] {

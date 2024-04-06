@@ -69,5 +69,6 @@ inline boost::asio::awaitable<void> Client::ProcessReceiveQueue() {
     }
 
     receive_queue_processing_ = false;
+    co_return;
 }
 }
