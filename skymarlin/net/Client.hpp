@@ -28,21 +28,25 @@ private:
     virtual void OnStop() = 0;
     virtual void HandleMessage(std::vector<uint8_t>&& message) = 0;
 
+    boost::asio::awaitable<void> ProcessReceiveQueue();
+
+    boost::asio::io_context& io_context_;
+
     const ClientId id_;
     std::atomic<bool> running_ {false};
-    ConsumerQueue<std::vector<uint8_t>> message_receive_queue_;
+    util::ConcurrentQueue<std::vector<uint8_t>> receive_queue_ {};
+    std::atomic<bool> receive_queue_processing_ {false};
+
     Connection connection_;
 };
 
 //TODO: Extract consume function and error handling function
 inline Client::Client(boost::asio::io_context& io_context, tcp::socket&& socket, const ClientId id)
-    : id_(id), message_receive_queue_(
-          io_context,
-          [this](std::vector<uint8_t>&& message)-> boost::asio::awaitable<const boost::system::error_code> {
-              HandleMessage(std::move(message));
-              co_return boost::system::error_code {};
-          }, [this](const boost::system::error_code&) {}),
-      connection_(io_context, std::move(socket), message_receive_queue_) {}
+    : io_context_(io_context), id_(id),
+      connection_(io_context, std::move(socket), receive_queue_, [this] {
+          if (receive_queue_processing_.exchange(true)) return;
+          co_spawn(io_context_, ProcessReceiveQueue(), boost::asio::detached);
+      }) {}
 
 inline void Client::Start() {
     running_ = true;
@@ -57,5 +61,13 @@ inline void Client::Stop() {
     connection_.Disconnect();
 
     OnStop();
+}
+
+inline boost::asio::awaitable<void> Client::ProcessReceiveQueue() {
+    while (!receive_queue_.empty()) {
+        HandleMessage(receive_queue_.Pop());
+    }
+
+    receive_queue_processing_ = false;
 }
 }

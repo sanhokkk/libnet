@@ -20,7 +20,6 @@ private:
     void OnStop() override {}
 
     void HandleMessage(std::vector<uint8_t>&& buffer) override {
-        //TODO: verify buffer
         flatbuffers::Verifier verifier {buffer.data(), buffer.size()};
         bool ok = VerifyMessageBuffer(verifier);
 
@@ -61,13 +60,8 @@ TEST_CASE("Simple message exchange", "Network") {
     };
 
     boost::asio::io_context client_context {};
-    ConsumerQueue<std::vector<uint8_t>> client_message_queue {
-        client_context, [](std::vector<uint8_t>&&)-> boost::asio::awaitable<const boost::system::error_code> {
-            co_return boost::system::error_code {};
-        },
-        [](const boost::system::error_code&) {}
-    };
-    Connection client_connection {client_context, tcp::socket {client_context}, client_message_queue};
+    util::ConcurrentQueue<std::vector<uint8_t>> client_receive_queue {}; // Not used
+    Connection client_connection {client_context, tcp::socket {client_context}, client_receive_queue, []{}};
 
     server.Start();
 

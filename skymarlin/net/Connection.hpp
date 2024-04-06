@@ -2,23 +2,22 @@
 
 #include <boost/asio.hpp>
 #include <flatbuffers/flatbuffers.h>
-#include <skymarlin/util/ConsumerQueue.hpp>
 #include <skymarlin/util/Log.hpp>
+#include <skymarlin/util/Queue.hpp>
 
 namespace skymarlin::net {
 using boost::asio::ip::tcp;
-using util::ConsumerQueue;
 
 class Connection final : public std::enable_shared_from_this<Connection> {
 public:
     Connection(boost::asio::io_context& io_context, tcp::socket&& socket,
-               ConsumerQueue<std::vector<uint8_t>>& receive_queue);
+               util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue,
+               std::function<void()>&& on_message_received);
     ~Connection();
 
     void Disconnect();
     void StartReceiveMessage();
     void SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer> message);
-
     static boost::asio::awaitable<bool> Connect(Connection& connection, std::string_view host, uint16_t port);
 
     bool connected() const { return connected_; }
@@ -33,27 +32,19 @@ private:
     tcp::socket socket_;
     std::atomic<bool> connected_ {true};
 
-    ConsumerQueue<std::vector<uint8_t>>& receive_queue_;
-    ConsumerQueue<std::shared_ptr<flatbuffers::DetachedBuffer>> send_queue_;
+    util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue_;
+    std::function<void()> OnMessageReceived;
+
+    util::ConcurrentQueue<std::shared_ptr<flatbuffers::DetachedBuffer>> send_queue_ {};
+    std::atomic<bool> send_queue_processing_ {false};
 };
 
 //TODO: Extract consume function and error handling function
 inline Connection::Connection(boost::asio::io_context& io_context, tcp::socket&& socket,
-                              ConsumerQueue<std::vector<uint8_t>>& receive_queue)
-    : io_context_(io_context), socket_(std::move(socket)), receive_queue_(receive_queue),
-      send_queue_(io_context_,
-                  [this](
-              std::shared_ptr<flatbuffers::DetachedBuffer> buffer)-> boost::asio::awaitable<const
-              boost::system::error_code> {
-                      auto [ec, _] = co_await async_write(socket_,
-                                                          boost::asio::buffer(buffer->data(), buffer->size()),
-                                                          as_tuple(boost::asio::use_awaitable));
-                      co_return ec;
-                  },
-                  [this](const boost::system::error_code& ec) {
-                      SKYMARLIN_LOG_ERROR("Error on sending packet: {}", ec.what());
-                      Disconnect();
-                  }) {}
+                              util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue,
+                              std::function<void()>&& on_message_received)
+    : io_context_(io_context), socket_(std::move(socket)),
+      OnMessageReceived(std::move(on_message_received)), receive_queue_(receive_queue) {}
 
 inline Connection::~Connection() {
     if (connected_) {
@@ -70,6 +61,7 @@ inline void Connection::StartReceiveMessage() {
             if (!message) continue;
 
             receive_queue_.Push(std::move(*message));
+            OnMessageReceived();
         }
     }, boost::asio::detached);
 }
@@ -91,6 +83,48 @@ inline void Connection::SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer>
     if (!message || !connected_) return;
 
     send_queue_.Push(std::move(message));
+
+    if (send_queue_processing_.exchange(true)) return;
+    co_spawn(io_context_, ProcessSendQueue(), boost::asio::detached);
+}
+
+inline boost::asio::awaitable<std::optional<std::vector<uint8_t>>> Connection::ReceiveMessage() {
+    constexpr size_t MESSAGE_SIZE_PREFIX_BYTES = 4;
+
+    std::array<uint8_t, MESSAGE_SIZE_PREFIX_BYTES> header_buffer {};
+    if (const auto [ec, _] = co_await async_read(socket_,
+                                                 boost::asio::buffer(header_buffer),
+                                                 as_tuple(boost::asio::use_awaitable)); ec) {
+        Disconnect();
+        co_return std::nullopt;
+    }
+
+    const auto size = flatbuffers::GetSizePrefixedBufferLength(header_buffer.data());
+    std::vector<uint8_t> body_buffer(size - MESSAGE_SIZE_PREFIX_BYTES);
+
+    if (const auto [ec, _] = co_await async_read(socket_,
+                                                 boost::asio::buffer(body_buffer),
+                                                 as_tuple(boost::asio::use_awaitable)); ec) {
+        Disconnect();
+        co_return std::nullopt;
+    }
+    co_return body_buffer;
+}
+
+inline boost::asio::awaitable<void> Connection::ProcessSendQueue() {
+    while (!send_queue_.empty()) {
+        const auto buffer = send_queue_.Pop();
+
+        if (auto [ec, _] = co_await async_write(socket_,
+                                                boost::asio::buffer(buffer->data(), buffer->size()),
+                                                as_tuple(boost::asio::use_awaitable)); ec) {
+            SKYMARLIN_LOG_ERROR("Error on sending packet: {}", ec.what());
+            Disconnect();
+            co_return;
+        }
+    }
+
+    send_queue_processing_ = false;
 }
 
 inline boost::asio::awaitable<bool> Connection::Connect(Connection& connection, std::string_view host, uint16_t port) {
@@ -116,28 +150,5 @@ inline boost::asio::awaitable<bool> Connection::Connect(Connection& connection, 
     SKYMARLIN_LOG_INFO("Connected to {}:{}", host, port);
 
     co_return true;
-}
-
-inline boost::asio::awaitable<std::optional<std::vector<uint8_t>>> Connection::ReceiveMessage() {
-    constexpr size_t MESSAGE_SIZE_PREFIX_BYTES = 4;
-
-    std::array<uint8_t, MESSAGE_SIZE_PREFIX_BYTES> header_buffer {};
-    if (const auto [ec, _] = co_await async_read(socket_,
-                                                 boost::asio::buffer(header_buffer),
-                                                 as_tuple(boost::asio::use_awaitable)); ec) {
-        Disconnect();
-        co_return std::nullopt;
-    }
-
-    const auto size = flatbuffers::GetSizePrefixedBufferLength(header_buffer.data());
-    std::vector<uint8_t> body_buffer(size - MESSAGE_SIZE_PREFIX_BYTES);
-
-    if (const auto [ec, _] = co_await async_read(socket_,
-                                                 boost::asio::buffer(body_buffer),
-                                                 as_tuple(boost::asio::use_awaitable)); ec) {
-        Disconnect();
-        co_return std::nullopt;
-    }
-    co_return body_buffer;
 }
 }
