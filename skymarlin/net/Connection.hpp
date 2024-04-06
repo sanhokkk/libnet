@@ -1,48 +1,59 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <flatbuffers/detached_buffer.h>
-#include <skymarlin/net/IConnection.hpp>
-#include <skymarlin/net/Message.hpp>
-#include <skymarlin/net/MessageHandler.hpp>
+#include <flatbuffers/flatbuffers.h>
+#include <skymarlin/util/ConsumerQueue.hpp>
 #include <skymarlin/util/Log.hpp>
-#include <skymarlin/util/Queue.hpp>
 
 namespace skymarlin::net {
 using boost::asio::ip::tcp;
+using util::ConsumerQueue;
 
-class Connection final : public IConnection, public std::enable_shared_from_this<Connection> {
+class Connection final : public std::enable_shared_from_this<Connection> {
 public:
-    Connection(boost::asio::io_context& io_context, tcp::socket&& socket);
-    ~Connection() override;
+    Connection(boost::asio::io_context& io_context, tcp::socket&& socket,
+               ConsumerQueue<std::vector<uint8_t>>& receive_queue);
+    ~Connection();
 
-    void Disconnect() override;
-    void StartReceiveMessage() override;
-    void SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer> message) override;
+    void Disconnect();
+    void StartReceiveMessage();
+    void SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer> message);
 
     static boost::asio::awaitable<bool> Connect(Connection& connection, std::string_view host, uint16_t port);
 
-    bool connected() const override { return connected_; }
-    tcp::endpoint local_endpoint() const override { return socket_.lowest_layer().local_endpoint(); }
-    tcp::endpoint remote_endpoint() const override { return socket_.lowest_layer().remote_endpoint(); }
+    bool connected() const { return connected_; }
+    tcp::endpoint local_endpoint() const { return socket_.lowest_layer().local_endpoint(); }
+    tcp::endpoint remote_endpoint() const { return socket_.lowest_layer().remote_endpoint(); }
 
 private:
-    boost::asio::awaitable<std::unique_ptr<Message>> ReceiveMessage();
-    boost::asio::awaitable<std::optional<MessageHeader>> ReadMessageHeader();
-    boost::asio::awaitable<std::optional<std::vector<byte>>> ReadMessageBody(MessageHeader header);
+    boost::asio::awaitable<std::optional<std::vector<uint8_t>>> ReceiveMessage();
     boost::asio::awaitable<void> ProcessSendQueue();
 
     boost::asio::io_context& io_context_;
     tcp::socket socket_;
     std::atomic<bool> connected_ {true};
 
-    util::ConcurrentQueue<std::shared_ptr<flatbuffers::DetachedBuffer>> send_queue_ {};
-    std::atomic<bool> send_queue_processing_ {false};
+    ConsumerQueue<std::vector<uint8_t>>& receive_queue_;
+    ConsumerQueue<std::shared_ptr<flatbuffers::DetachedBuffer>> send_queue_;
 };
 
-
-inline Connection::Connection(boost::asio::io_context& io_context, tcp::socket&& socket)
-    : io_context_(io_context), socket_(std::move(socket)) {}
+//TODO: Extract consume function and error handling function
+inline Connection::Connection(boost::asio::io_context& io_context, tcp::socket&& socket,
+                              ConsumerQueue<std::vector<uint8_t>>& receive_queue)
+    : io_context_(io_context), socket_(std::move(socket)), receive_queue_(receive_queue),
+      send_queue_(io_context_,
+                  [this](
+              std::shared_ptr<flatbuffers::DetachedBuffer> buffer)-> boost::asio::awaitable<const
+              boost::system::error_code> {
+                      auto [ec, _] = co_await async_write(socket_,
+                                                          boost::asio::buffer(buffer->data(), buffer->size()),
+                                                          as_tuple(boost::asio::use_awaitable));
+                      co_return ec;
+                  },
+                  [this](const boost::system::error_code& ec) {
+                      SKYMARLIN_LOG_ERROR("Error on sending packet: {}", ec.what());
+                      Disconnect();
+                  }) {}
 
 inline Connection::~Connection() {
     if (connected_) {
@@ -58,7 +69,7 @@ inline void Connection::StartReceiveMessage() {
             auto message = co_await ReceiveMessage();
             if (!message) continue;
 
-            MessageHandler::Handle(std::move(message), shared_from_this());
+            receive_queue_.Push(std::move(*message));
         }
     }, boost::asio::detached);
 }
@@ -80,9 +91,6 @@ inline void Connection::SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer>
     if (!message || !connected_) return;
 
     send_queue_.Push(std::move(message));
-
-    if (send_queue_processing_.exchange(true)) return;
-    co_spawn(io_context_, ProcessSendQueue(), boost::asio::detached);
 }
 
 inline boost::asio::awaitable<bool> Connection::Connect(Connection& connection, std::string_view host, uint16_t port) {
@@ -110,63 +118,26 @@ inline boost::asio::awaitable<bool> Connection::Connect(Connection& connection, 
     co_return true;
 }
 
-inline boost::asio::awaitable<void> Connection::ProcessSendQueue() {
-    while (!send_queue_.empty()) {
-        const auto message = send_queue_.Pop();
+inline boost::asio::awaitable<std::optional<std::vector<uint8_t>>> Connection::ReceiveMessage() {
+    constexpr size_t MESSAGE_SIZE_PREFIX_BYTES = 4;
 
-        if (const auto [ec, _] = co_await async_write(socket_,
-                                                      boost::asio::buffer(message->data(), message->size()),
-                                                      as_tuple(boost::asio::use_awaitable)); ec) {
-            SKYMARLIN_LOG_ERROR("Error on sending packet: {}", ec.what());
-            Disconnect();
-            co_return;
-        }
-    }
-
-    send_queue_processing_ = false;
-}
-
-inline boost::asio::awaitable<std::unique_ptr<Message>> Connection::ReceiveMessage() {
-    const std::optional<MessageHeader> header = co_await ReadMessageHeader();
-    if (!header) {
-        Disconnect();
-        co_return nullptr;
-    }
-
-    auto buffer = co_await ReadMessageBody(*header);
-    if (!buffer) {
-        Disconnect();
-        co_return nullptr;
-    }
-
-    co_return std::make_unique<Message>(std::move(*buffer), *header);
-}
-
-inline boost::asio::awaitable<std::optional<MessageHeader>> Connection::ReadMessageHeader() {
-    std::array<byte, MessageHeader::HEADER_SIZE> buffer {};
-
+    std::array<uint8_t, MESSAGE_SIZE_PREFIX_BYTES> header_buffer {};
     if (const auto [ec, _] = co_await async_read(socket_,
-                                                 boost::asio::buffer(buffer),
+                                                 boost::asio::buffer(header_buffer),
                                                  as_tuple(boost::asio::use_awaitable)); ec) {
-        SKYMARLIN_LOG_ERROR("Error on receiving packet header: {}", ec.what());
+        Disconnect();
         co_return std::nullopt;
     }
 
-    co_return MessageHeader::ReadHeader(buffer);
-}
-
-inline boost::asio::awaitable<std::optional<std::vector<byte>>> Connection::ReadMessageBody(
-    const MessageHeader header) {
-    //TODO: Alllocate buffer from the memory pool
-    std::vector<byte> buffer(header.size);
+    const auto size = flatbuffers::GetSizePrefixedBufferLength(header_buffer.data());
+    std::vector<uint8_t> body_buffer(size - MESSAGE_SIZE_PREFIX_BYTES);
 
     if (const auto [ec, _] = co_await async_read(socket_,
-                                                 boost::asio::buffer(buffer),
+                                                 boost::asio::buffer(body_buffer),
                                                  as_tuple(boost::asio::use_awaitable)); ec) {
-        SKYMARLIN_LOG_ERROR("Error on receiving packet body: {}", ec.what());
+        Disconnect();
         co_return std::nullopt;
     }
-
-    co_return buffer;
+    co_return body_buffer;
 }
 }

@@ -31,7 +31,7 @@ public:
     }
 
 private:
-    std::queue<T> queue_{};
-    mutable std::mutex mutex{};
+    std::queue<T> queue_ {};
+    mutable std::mutex mutex {};
 };
 }

@@ -1,7 +1,19 @@
 namespace skymarlin.net.test;
 
 table SimpleMessage {
-    password:uint32;
+    hello:string;
+    world:string;
 }
 
-root_type SimpleMessage;
+table DummyMessage {}
+
+union MessageType {
+    SimpleMessage,
+    DummyMessage
+}
+
+table Message {
+    message:MessageType;
+}
+
+root_type Message;

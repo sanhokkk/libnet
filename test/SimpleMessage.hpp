@@ -20,17 +20,79 @@ namespace test {
 struct SimpleMessage;
 struct SimpleMessageBuilder;
 
+struct DummyMessage;
+struct DummyMessageBuilder;
+
+struct Message;
+struct MessageBuilder;
+
+enum class MessageType : uint8_t {
+  NONE = 0,
+  SimpleMessage = 1,
+  DummyMessage = 2,
+  MIN = NONE,
+  MAX = DummyMessage
+};
+
+inline const MessageType (&EnumValuesMessageType())[3] {
+  static const MessageType values[] = {
+    MessageType::NONE,
+    MessageType::SimpleMessage,
+    MessageType::DummyMessage
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesMessageType() {
+  static const char * const names[4] = {
+    "NONE",
+    "SimpleMessage",
+    "DummyMessage",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameMessageType(MessageType e) {
+  if (::flatbuffers::IsOutRange(e, MessageType::NONE, MessageType::DummyMessage)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesMessageType()[index];
+}
+
+template<typename T> struct MessageTypeTraits {
+  static const MessageType enum_value = MessageType::NONE;
+};
+
+template<> struct MessageTypeTraits<skymarlin::net::test::SimpleMessage> {
+  static const MessageType enum_value = MessageType::SimpleMessage;
+};
+
+template<> struct MessageTypeTraits<skymarlin::net::test::DummyMessage> {
+  static const MessageType enum_value = MessageType::DummyMessage;
+};
+
+bool VerifyMessageType(::flatbuffers::Verifier &verifier, const void *obj, MessageType type);
+bool VerifyMessageTypeVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<MessageType> *types);
+
 struct SimpleMessage FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef SimpleMessageBuilder Builder;
+  struct Traits;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_PASSWORD = 4
+    VT_HELLO = 4,
+    VT_WORLD = 6
   };
-  uint32_t password() const {
-    return GetField<uint32_t>(VT_PASSWORD, 0);
+  const ::flatbuffers::String *hello() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_HELLO);
+  }
+  const ::flatbuffers::String *world() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_WORLD);
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_PASSWORD, 4) &&
+           VerifyOffset(verifier, VT_HELLO) &&
+           verifier.VerifyString(hello()) &&
+           VerifyOffset(verifier, VT_WORLD) &&
+           verifier.VerifyString(world()) &&
            verifier.EndTable();
   }
 };
@@ -39,8 +101,11 @@ struct SimpleMessageBuilder {
   typedef SimpleMessage Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_password(uint32_t password) {
-    fbb_.AddElement<uint32_t>(SimpleMessage::VT_PASSWORD, password, 0);
+  void add_hello(::flatbuffers::Offset<::flatbuffers::String> hello) {
+    fbb_.AddOffset(SimpleMessage::VT_HELLO, hello);
+  }
+  void add_world(::flatbuffers::Offset<::flatbuffers::String> world) {
+    fbb_.AddOffset(SimpleMessage::VT_WORLD, world);
   }
   explicit SimpleMessageBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -55,39 +120,207 @@ struct SimpleMessageBuilder {
 
 inline ::flatbuffers::Offset<SimpleMessage> CreateSimpleMessage(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t password = 0) {
+    ::flatbuffers::Offset<::flatbuffers::String> hello = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> world = 0) {
   SimpleMessageBuilder builder_(_fbb);
-  builder_.add_password(password);
+  builder_.add_world(world);
+  builder_.add_hello(hello);
   return builder_.Finish();
 }
 
-inline const skymarlin::net::test::SimpleMessage *GetSimpleMessage(const void *buf) {
-  return ::flatbuffers::GetRoot<skymarlin::net::test::SimpleMessage>(buf);
+struct SimpleMessage::Traits {
+  using type = SimpleMessage;
+  static auto constexpr Create = CreateSimpleMessage;
+};
+
+inline ::flatbuffers::Offset<SimpleMessage> CreateSimpleMessageDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *hello = nullptr,
+    const char *world = nullptr) {
+  auto hello__ = hello ? _fbb.CreateString(hello) : 0;
+  auto world__ = world ? _fbb.CreateString(world) : 0;
+  return skymarlin::net::test::CreateSimpleMessage(
+      _fbb,
+      hello__,
+      world__);
 }
 
-inline const skymarlin::net::test::SimpleMessage *GetSizePrefixedSimpleMessage(const void *buf) {
-  return ::flatbuffers::GetSizePrefixedRoot<skymarlin::net::test::SimpleMessage>(buf);
+struct DummyMessage FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef DummyMessageBuilder Builder;
+  struct Traits;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_HOHO = 4
+  };
+  uint32_t hoho() const {
+    return GetField<uint32_t>(VT_HOHO, 0);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint32_t>(verifier, VT_HOHO, 4) &&
+           verifier.EndTable();
+  }
+};
+
+struct DummyMessageBuilder {
+  typedef DummyMessage Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_hoho(uint32_t hoho) {
+    fbb_.AddElement<uint32_t>(DummyMessage::VT_HOHO, hoho, 0);
+  }
+  explicit DummyMessageBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<DummyMessage> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<DummyMessage>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<DummyMessage> CreateDummyMessage(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    uint32_t hoho = 0) {
+  DummyMessageBuilder builder_(_fbb);
+  builder_.add_hoho(hoho);
+  return builder_.Finish();
 }
 
-inline bool VerifySimpleMessageBuffer(
+struct DummyMessage::Traits {
+  using type = DummyMessage;
+  static auto constexpr Create = CreateDummyMessage;
+};
+
+struct Message FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef MessageBuilder Builder;
+  struct Traits;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_MESSAGE_TYPE = 4,
+    VT_MESSAGE = 6
+  };
+  skymarlin::net::test::MessageType message_type() const {
+    return static_cast<skymarlin::net::test::MessageType>(GetField<uint8_t>(VT_MESSAGE_TYPE, 0));
+  }
+  const void *message() const {
+    return GetPointer<const void *>(VT_MESSAGE);
+  }
+  template<typename T> const T *message_as() const;
+  const skymarlin::net::test::SimpleMessage *message_as_SimpleMessage() const {
+    return message_type() == skymarlin::net::test::MessageType::SimpleMessage ? static_cast<const skymarlin::net::test::SimpleMessage *>(message()) : nullptr;
+  }
+  const skymarlin::net::test::DummyMessage *message_as_DummyMessage() const {
+    return message_type() == skymarlin::net::test::MessageType::DummyMessage ? static_cast<const skymarlin::net::test::DummyMessage *>(message()) : nullptr;
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint8_t>(verifier, VT_MESSAGE_TYPE, 1) &&
+           VerifyOffset(verifier, VT_MESSAGE) &&
+           VerifyMessageType(verifier, message(), message_type()) &&
+           verifier.EndTable();
+  }
+};
+
+template<> inline const skymarlin::net::test::SimpleMessage *Message::message_as<skymarlin::net::test::SimpleMessage>() const {
+  return message_as_SimpleMessage();
+}
+
+template<> inline const skymarlin::net::test::DummyMessage *Message::message_as<skymarlin::net::test::DummyMessage>() const {
+  return message_as_DummyMessage();
+}
+
+struct MessageBuilder {
+  typedef Message Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_message_type(skymarlin::net::test::MessageType message_type) {
+    fbb_.AddElement<uint8_t>(Message::VT_MESSAGE_TYPE, static_cast<uint8_t>(message_type), 0);
+  }
+  void add_message(::flatbuffers::Offset<void> message) {
+    fbb_.AddOffset(Message::VT_MESSAGE, message);
+  }
+  explicit MessageBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<Message> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<Message>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<Message> CreateMessage(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    skymarlin::net::test::MessageType message_type = skymarlin::net::test::MessageType::NONE,
+    ::flatbuffers::Offset<void> message = 0) {
+  MessageBuilder builder_(_fbb);
+  builder_.add_message(message);
+  builder_.add_message_type(message_type);
+  return builder_.Finish();
+}
+
+struct Message::Traits {
+  using type = Message;
+  static auto constexpr Create = CreateMessage;
+};
+
+inline bool VerifyMessageType(::flatbuffers::Verifier &verifier, const void *obj, MessageType type) {
+  switch (type) {
+    case MessageType::NONE: {
+      return true;
+    }
+    case MessageType::SimpleMessage: {
+      auto ptr = reinterpret_cast<const skymarlin::net::test::SimpleMessage *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case MessageType::DummyMessage: {
+      auto ptr = reinterpret_cast<const skymarlin::net::test::DummyMessage *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return true;
+  }
+}
+
+inline bool VerifyMessageTypeVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<MessageType> *types) {
+  if (!values || !types) return !values && !types;
+  if (values->size() != types->size()) return false;
+  for (::flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
+    if (!VerifyMessageType(
+        verifier,  values->Get(i), types->GetEnum<MessageType>(i))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+inline const skymarlin::net::test::Message *GetMessage(const void *buf) {
+  return ::flatbuffers::GetRoot<skymarlin::net::test::Message>(buf);
+}
+
+inline const skymarlin::net::test::Message *GetSizePrefixedMessage(const void *buf) {
+  return ::flatbuffers::GetSizePrefixedRoot<skymarlin::net::test::Message>(buf);
+}
+
+inline bool VerifyMessageBuffer(
     ::flatbuffers::Verifier &verifier) {
-  return verifier.VerifyBuffer<skymarlin::net::test::SimpleMessage>(nullptr);
+  return verifier.VerifyBuffer<skymarlin::net::test::Message>(nullptr);
 }
 
-inline bool VerifySizePrefixedSimpleMessageBuffer(
+inline bool VerifySizePrefixedMessageBuffer(
     ::flatbuffers::Verifier &verifier) {
-  return verifier.VerifySizePrefixedBuffer<skymarlin::net::test::SimpleMessage>(nullptr);
+  return verifier.VerifySizePrefixedBuffer<skymarlin::net::test::Message>(nullptr);
 }
 
-inline void FinishSimpleMessageBuffer(
+inline void FinishMessageBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
-    ::flatbuffers::Offset<skymarlin::net::test::SimpleMessage> root) {
+    ::flatbuffers::Offset<skymarlin::net::test::Message> root) {
   fbb.Finish(root);
 }
 
-inline void FinishSizePrefixedSimpleMessageBuffer(
+inline void FinishSizePrefixedMessageBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
-    ::flatbuffers::Offset<skymarlin::net::test::SimpleMessage> root) {
+    ::flatbuffers::Offset<skymarlin::net::test::Message> root) {
   fbb.FinishSizePrefixed(root);
 }
 
