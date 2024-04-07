@@ -1,11 +1,11 @@
-#include <catch2/catch_test_macros.hpp>
+#include <doctest.h>
 #include <skymarlin/util/Map.hpp>
 
 #include <thread>
 
 namespace skymarlin::util::test
 {
-TEST_CASE("Insert/Erase thread safety", "ConcurrentMap")
+TEST_CASE("Insert/Erase thread safety")
 {
     ConcurrentMap<int, int> map {};
 
@@ -29,7 +29,7 @@ TEST_CASE("Insert/Erase thread safety", "ConcurrentMap")
     REQUIRE(map.empty());
 }
 
-TEST_CASE("ForEachAll", "ConcurrentMap")
+TEST_CASE("ForEachAll")
 {
     ConcurrentMap<int, int> map {};
     map.InsertOrAssign(1, 10);
@@ -50,7 +50,7 @@ TEST_CASE("ForEachAll", "ConcurrentMap")
     REQUIRE(v3 == 35);
 }
 
-TEST_CASE("ForEachSome", "ConcurrentMap")
+TEST_CASE("ForEachSome")
 {
     ConcurrentMap<int, int> map {};
     map.InsertOrAssign(1, 10);

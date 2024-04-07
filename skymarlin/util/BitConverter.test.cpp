@@ -1,8 +1,8 @@
-#include <catch2/catch_test_macros.hpp>
+#include <doctest.h>
 #include <skymarlin/util/BitConverter.hpp>
 
 namespace skymarlin::util::test {
-TEST_CASE("Numeric read and write", "Bitconverter") {
+TEST_CASE("Numeric read and write") {
     constexpr size_t buffer_size = 64;
     byte buffer[buffer_size] {};
 

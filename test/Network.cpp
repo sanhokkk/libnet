@@ -1,4 +1,5 @@
-#include <catch2/catch_test_macros.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include <doctest.h>
 #include <skymarlin/net/Client.hpp>
 #include <skymarlin/net/Connection.hpp>
 #include <skymarlin/net/Server.hpp>
@@ -25,11 +26,11 @@ private:
 
     void HandleMessage(std::vector<uint8_t>&& buffer) override {
         flatbuffers::Verifier verifier {buffer.data(), buffer.size()};
-        if (!VerifyMessageBuffer(verifier)) FAIL();
+        CHECK(VerifyMessageBuffer(verifier));
 
         const auto message = GetMessage(buffer.data());
         const auto message_type = message->message_type();
-        if (message_type != MessageType::SimpleMessage) FAIL();
+        CHECK(message_type == MessageType::SimpleMessage);
 
         const auto simple_message = message->message_as<SimpleMessage>();
         SKYMARLIN_LOG_INFO("hello world: {} {}", simple_message->hello()->c_str(), simple_message->world()->c_str());
@@ -57,7 +58,7 @@ private:
     }
 };
 
-TEST_CASE("Simple message exchange", "Network") {
+TEST_CASE("Simple message exchange") {
     constexpr unsigned short PORT = 55555;
 
     boost::asio::io_context server_context {};
@@ -75,8 +76,9 @@ TEST_CASE("Simple message exchange", "Network") {
     Connection client_connection {client_context, tcp::socket {client_context}, client_receive_queue, [] {}};
 
     co_spawn(client_context, [&client_connection]()-> boost::asio::awaitable<void> {
-        if (const auto result = co_await Connection::Connect(client_connection, "localhost", PORT); !result) {
-            FAIL();
+        {
+            const auto result = co_await Connection::Connect(client_connection, "localhost", PORT);
+            CHECK(result);
         }
 
         // Send SimpleMessage

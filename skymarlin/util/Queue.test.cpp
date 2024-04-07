@@ -1,11 +1,11 @@
-#include <catch2/catch_test_macros.hpp>
+#include <doctest.h>
 #include <skymarlin/util/Queue.hpp>
 
 #include <thread>
 
 namespace skymarlin::util::test
 {
-TEST_CASE("Thread safety", "ConcurrentQueue")
+TEST_CASE("Thread safety")
 {
     ConcurrentQueue<int> queue {};
 
