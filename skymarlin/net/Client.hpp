@@ -40,7 +40,7 @@ private:
     Connection connection_;
 };
 
-//TODO: Extract consume function and error handling function
+
 inline Client::Client(boost::asio::io_context& io_context, tcp::socket&& socket, const ClientId id)
     : io_context_(io_context), id_(id),
       connection_(io_context, std::move(socket), receive_queue_, [this] {

@@ -39,7 +39,7 @@ private:
     std::atomic<bool> send_queue_processing_ {false};
 };
 
-//TODO: Extract consume function and error handling function
+
 inline Connection::Connection(boost::asio::io_context& io_context, tcp::socket&& socket,
                               util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue,
                               std::function<void()>&& on_message_received)
@@ -100,6 +100,7 @@ inline boost::asio::awaitable<std::optional<std::vector<uint8_t>>> Connection::R
     }
 
     const auto size = flatbuffers::GetSizePrefixedBufferLength(header_buffer.data());
+    //TODO: Managed memory allocation
     std::vector<uint8_t> body_buffer(size - MESSAGE_SIZE_PREFIX_BYTES);
 
     if (const auto [ec, _] = co_await async_read(socket_,

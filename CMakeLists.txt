@@ -21,22 +21,18 @@ else ()
     target_compile_options(libnet INTERFACE -Wall -Wextra -Wpedantic)
 endif ()
 
-target_include_directories(libnet INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(libnet INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
 
 
 ### Dependency ###
 include(FetchContent)
 
 # Boost
-FetchContent_Declare(
-    Boost
-    URL https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.7z
-    DOWNLOAD_NO_EXTRACT FALSE
-)
-FetchContent_MakeAvailable(Boost)
+find_package(Boost REQUIRED
+    COMPONENTS system)
 
 # OpenSSL
-find_package(OpenSSL REQUIRED)
+#find_package(OpenSSL REQUIRED)
 
 # Flatbuffers
 FetchContent_Declare(
@@ -56,11 +52,44 @@ FetchContent_MakeAvailable(spdlog)
 
 target_link_libraries(libnet
     INTERFACE
-    Boost::asio
+    Boost::system
     spdlog
     flatbuffers
-    OpenSSL::SSL
-    OpenSSL::Crypto
+#    OpenSSL::SSL
+#    OpenSSL::Crypto
+)
+
+
+## Installation ###
+add_library(skymarlin::libnet ALIAS libnet)
+
+include(GNUInstallDirs)
+install(TARGETS libnet spdlog
+    EXPORT libnet-targets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(EXPORT libnet-targets
+    FILE libnet-targets.cmake
+    NAMESPACE skymarlin::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/skymarlin
+)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    libnet-config-version.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY ExactVersion
+)
+
+install(
+    FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/libnet-config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/libnet-config-version.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/skymarlin
 )
 
 
@@ -88,6 +117,8 @@ if (NOT IS_SUBPROJECT)
         GIT_TAG v3.5.3
     )
     FetchContent_MakeAvailable(Catch2)
+
+    #TODO: Compile test/SimpleMessage.fbs
 
     target_link_libraries(tests PRIVATE libnet Catch2::Catch2WithMain)
 endif ()
