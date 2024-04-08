@@ -41,18 +41,19 @@ private:
 
 class SimpleServer final : public Server {
 public:
-    SimpleServer(ServerConfig&& config, boost::asio::io_context& io_context, ClientFactory&& client_factory)
-        : Server(std::move(config), io_context, std::move(client_factory)) {}
+    SimpleServer(ServerConfig&& config, boost::asio::io_context& io_context)
+        : Server(std::move(config), io_context) {}
 
 private:
     void OnStart() override {
-        co_spawn(io_context_, [this]()->boost::asio::awaitable<void> {
+        co_spawn(io_context_, [this]()-> boost::asio::awaitable<void> {
             boost::asio::steady_timer timer(io_context_, std::chrono::milliseconds(500));
             co_await timer.async_wait(boost::asio::use_awaitable);
 
             Stop();
         }, boost::asio::detached);
     }
+
     void OnStop() override {
         SKYMARLIN_LOG_INFO("SimpleServer stopping");
     }
@@ -65,10 +66,10 @@ TEST_CASE("Simple message exchange") {
     SimpleServer server {
         ServerConfig(PORT),
         server_context,
-        [](boost::asio::io_context& io_context, tcp::socket&& socket) {
-            return std::make_shared<SimpleClient>(io_context, std::move(socket), 0);
-        }
     };
+    ClientManager::Init([](boost::asio::io_context& io_context, tcp::socket&& socket, ClientId id) {
+        return std::make_shared<SimpleClient>(io_context, std::move(socket), id);
+    });
     server.Start();
 
     boost::asio::io_context client_context {};

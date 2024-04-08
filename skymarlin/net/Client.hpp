@@ -8,7 +8,6 @@ namespace skymarlin::net {
 class Client;
 
 using ClientId = uint32_t;
-using ClientFactory = std::function<std::shared_ptr<Client>(boost::asio::io_context&, tcp::socket&&)>;
 
 class Client : boost::noncopyable {
 public:
@@ -26,7 +25,7 @@ public:
 private:
     virtual void OnStart() = 0;
     virtual void OnStop() = 0;
-    virtual void HandleMessage(std::vector<uint8_t>&& message) = 0;
+    virtual void HandleMessage(std::vector<uint8_t>&& buffer) = 0;
 
     boost::asio::awaitable<void> ProcessReceiveQueue();
 

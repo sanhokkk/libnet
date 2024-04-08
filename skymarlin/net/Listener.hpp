@@ -10,7 +10,7 @@ using boost::asio::ip::tcp;
 
 class Listener final : boost::noncopyable {
 public:
-    Listener(boost::asio::io_context& io_context, unsigned short port, ClientFactory&& client_factory);
+    Listener(boost::asio::io_context& io_context, unsigned short port);
 
     ~Listener() = default;
 
@@ -23,16 +23,13 @@ private:
 
     boost::asio::io_context& io_context_;
     tcp::acceptor acceptor_;
-    const ClientFactory client_factory_;
 
     std::atomic<bool> listening_ {false};
 };
 
-inline Listener::Listener(boost::asio::io_context& io_context, const unsigned short port,
-                          ClientFactory&& client_factory)
+inline Listener::Listener(boost::asio::io_context& io_context, const unsigned short port)
     : io_context_(io_context),
-      acceptor_(io_context, tcp::endpoint(tcp::v6(), port)),
-      client_factory_(std::move(client_factory)) {}
+      acceptor_(io_context, tcp::endpoint(tcp::v6(), port)) {}
 
 inline void Listener::Start() {
     listening_ = true;
@@ -62,14 +59,13 @@ inline boost::asio::awaitable<void> Listener::Listen() {
             continue;
         }
 
-        auto client = client_factory_(io_context_, std::move(socket));
+        const auto client = ClientManager::CreateClient(io_context_, std::move(socket));
         if (!client) {
             SKYMARLIN_LOG_ERROR("Failed to create a client on accept");
             co_return;
         }
 
         client->Start();
-        ClientManager::AddClient(client);
     }
 }
 }

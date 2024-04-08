@@ -8,9 +8,9 @@
 
 // Ensure the included flatbuffers.h is the same version as when this file was
 // generated, otherwise it may not be compatible.
-static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
-              FLATBUFFERS_VERSION_MINOR == 5 &&
-              FLATBUFFERS_VERSION_REVISION == 26,
+static_assert(FLATBUFFERS_VERSION_MAJOR == 24 &&
+              FLATBUFFERS_VERSION_MINOR == 3 &&
+              FLATBUFFERS_VERSION_REVISION == 6,
              "Non-compatible flatbuffers version included");
 
 namespace skymarlin {
@@ -148,15 +148,8 @@ inline ::flatbuffers::Offset<SimpleMessage> CreateSimpleMessageDirect(
 struct DummyMessage FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef DummyMessageBuilder Builder;
   struct Traits;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_HOHO = 4
-  };
-  uint32_t hoho() const {
-    return GetField<uint32_t>(VT_HOHO, 0);
-  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_HOHO, 4) &&
            verifier.EndTable();
   }
 };
@@ -165,9 +158,6 @@ struct DummyMessageBuilder {
   typedef DummyMessage Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_hoho(uint32_t hoho) {
-    fbb_.AddElement<uint32_t>(DummyMessage::VT_HOHO, hoho, 0);
-  }
   explicit DummyMessageBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -180,10 +170,8 @@ struct DummyMessageBuilder {
 };
 
 inline ::flatbuffers::Offset<DummyMessage> CreateDummyMessage(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t hoho = 0) {
+    ::flatbuffers::FlatBufferBuilder &_fbb) {
   DummyMessageBuilder builder_(_fbb);
-  builder_.add_hoho(hoho);
   return builder_.Finish();
 }
 
