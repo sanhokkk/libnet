@@ -50,7 +50,7 @@ target_link_libraries(libnet
 include(GNUInstallDirs)
 
 install(
-    TARGETS libnet Boost::system spdlog::spdlog flatbuffers
+    TARGETS libnet spdlog::spdlog flatbuffers
     EXPORT libnet-targets
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
