@@ -9,9 +9,10 @@ add_library(skymarlin::libnet ALIAS libnet)
 
 target_compile_features(libnet INTERFACE cxx_std_20)
 
-target_include_directories(libnet INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
+target_include_directories(libnet
+    INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
 )
 
 
@@ -47,11 +48,12 @@ target_link_libraries(libnet
 
 ### Packaging ###
 include(GNUInstallDirs)
-#install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
 install(TARGETS libnet
     EXPORT libnet-targets
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(EXPORT libnet-targets
     FILE libnet-targets.cmake
@@ -61,13 +63,13 @@ install(EXPORT libnet-targets
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-    libnet-config-version.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/libnet-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY ExactVersion
 )
 
 configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/libnet-config.cmake.in
+    ${CMAKE_CURRENT_LIST_DIR}/libnet-config.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/libnet-config.cmake
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/skymarlin
 )
@@ -78,7 +80,7 @@ install(FILES
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/skymarlin
 )
 
-export(TARGETS libnet-targets
+export(EXPORT libnet-targets
     FILE ${CMAKE_CURRENT_BINARY_DIR}/libnet-targets.cmake
     NAMESPACE skymarlin::
 )
@@ -86,5 +88,6 @@ export(TARGETS libnet-targets
 
 ### Tests ###
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-
+    enable_testing()
+    #TODO
 endif()
