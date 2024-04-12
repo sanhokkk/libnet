@@ -8,12 +8,10 @@ project(
 
 build_args = []
 
-include = include_directories('.')
+include = include_directories('include')
 
-#flatbuffers_dep = dependency('flatbuffers')
 dependencies = [
     dependency('boost', modules : ['system']),
-    #    flatbuffers_dep,
     dependency('flatbuffers'),
     dependency('spdlog'),
 ]
@@ -34,9 +32,9 @@ libnet_dep = declare_dependency(
 
 ### TEST ###
 test_files = [
-    'skymarlin/util/BitConverter.test.cpp',
-    'skymarlin/util/Map.test.cpp',
-    'skymarlin/util/Queue.test.cpp',
+    'include/skymarlin/util/BitConverter.test.cpp',
+    'include/skymarlin/util/Map.test.cpp',
+    'include/skymarlin/util/Queue.test.cpp',
     'test/Network.cpp',
 ]
 
