@@ -41,7 +41,7 @@ FetchContent_MakeAvailable(spdlog)
 target_link_libraries(libnet
     INTERFACE
     Boost::system
-    spdlog::spdlog
+    spdlog
     flatbuffers
 )
 
@@ -50,9 +50,9 @@ target_link_libraries(libnet
 include(GNUInstallDirs)
 
 install(
-    TARGETS libnet spdlog::spdlog flatbuffers
+    TARGETS libnet spdlog flatbuffers
     EXPORT libnet-targets
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
@@ -63,16 +63,16 @@ install(EXPORT libnet-targets
 )
 
 include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/libnet-config-version.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY ExactVersion
-)
-
 configure_package_config_file(
     ${CMAKE_CURRENT_LIST_DIR}/libnet-config.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/libnet-config.cmake
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/skymarlin
+)
+
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/libnet-config-version.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY ExactVersion
 )
 
 install(FILES
@@ -81,14 +81,13 @@ install(FILES
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/skymarlin
 )
 
-export(EXPORT libnet-targets
-    FILE ${CMAKE_CURRENT_BINARY_DIR}/libnet-targets.cmake
-    NAMESPACE skymarlin::
-)
+#export(EXPORT libnet-targets
+#    FILE ${CMAKE_CURRENT_BINARY_DIR}/libnet-targets.cmake
+#    NAMESPACE skymarlin::
+#)
 
 
 ### Tests ###
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     enable_testing()
-    #TODO
 endif()
