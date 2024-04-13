@@ -1,5 +1,4 @@
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include <doctest.h>
+#include <catch2/catch_test_macros.hpp>
 #include <skymarlin/net/Client.hpp>
 #include <skymarlin/net/Connection.hpp>
 #include <skymarlin/net/Server.hpp>
@@ -59,7 +58,7 @@ private:
     }
 };
 
-TEST_CASE("Simple message exchange") {
+TEST_CASE("Simple message exchange", "[net]") {
     constexpr unsigned short PORT = 55555;
 
     boost::asio::io_context server_context {};

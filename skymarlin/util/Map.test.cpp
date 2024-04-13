@@ -1,11 +1,11 @@
-#include <doctest.h>
+#include <catch2/catch_test_macros.hpp>
 #include <skymarlin/util/Map.hpp>
 
 #include <thread>
 
 namespace skymarlin::util::test
 {
-TEST_CASE("Insert/Erase thread safety")
+TEST_CASE("Insert/Erase thread safety", "[ConcurrentMap]")
 {
     ConcurrentMap<int, int> map {};
 

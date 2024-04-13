@@ -11,8 +11,8 @@ target_compile_features(libnet INTERFACE cxx_std_20)
 
 target_include_directories(libnet
     INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+#        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>
 )
 
 
@@ -52,9 +52,15 @@ include(GNUInstallDirs)
 install(
     TARGETS libnet spdlog flatbuffers
     EXPORT libnet-targets
-#    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(
+    DIRECTORY skymarlin/net
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/skymarlin
+)
+install(
+    DIRECTORY skymarlin/util
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/skymarlin
+)
 
 install(EXPORT libnet-targets
     FILE libnet-targets.cmake
@@ -81,13 +87,41 @@ install(FILES
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/skymarlin
 )
 
-#export(EXPORT libnet-targets
-#    FILE ${CMAKE_CURRENT_BINARY_DIR}/libnet-targets.cmake
-#    NAMESPACE skymarlin::
-#)
-
 
 ### Tests ###
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+    FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.5.4
+    )
+    FetchContent_MakeAvailable(Catch2)
+
+    add_executable(tests
+        skymarlin/util/BitConverter.test.cpp
+        skymarlin/util/Map.test.cpp
+        skymarlin/util/Queue.test.cpp
+
+        test/Network.test.cpp
+    )
+
+    target_compile_features(tests PRIVATE cxx_std_20)
+    target_link_libraries(tests PRIVATE skymarlin::libnet Catch2::Catch2WithMain)
+
+    add_custom_target(
+        compile_schema
+        COMMAND
+            flatc
+            --cpp
+            --cpp-std c++17
+            --filename-suffix "\"\""
+            --filename-ext hpp
+            -o "${CMAKE_CURRENT_SOURCE_DIR}/test"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/SimpleMessage.fbs"
+        DEPENDS flatc
+    )
+    add_dependencies(tests compile_schema)
+
     enable_testing()
+    add_test(NAME libnet-tests COMMAND tests)
 endif()
