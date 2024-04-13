@@ -1,6 +1,0 @@
-*
-!.gitignore
-
-!doctest.wrap
-!flatbuffers.wrap
-!spdlog.wrap
