@@ -90,8 +90,9 @@ install(FILES
 
 ### Utilities ###
 function(CompileSchemas target options out_path schemas)
+    set(compile_target_name "compile_schemas_${target}")
     add_custom_target(
-        compile_schemas
+        ${compile_target_name}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMAND
         flatc
@@ -104,7 +105,7 @@ function(CompileSchemas target options out_path schemas)
         ${schemas}
         DEPENDS flatc
     )
-    add_dependencies(${target} compile_schemas)
+    add_dependencies(${target} ${compile_target_name})
 endfunction()
 
 
