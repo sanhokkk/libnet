@@ -88,6 +88,26 @@ install(FILES
 )
 
 
+### Utilities ###
+function(CompileSchemas target options out_path schemas)
+    add_custom_target(
+        compile_schemas
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND
+        flatc
+        --cpp
+        --cpp-std c++17
+        --filename-suffix "\"\""
+        --filename-ext hpp
+        ${options}
+        -o ${out_path}
+        ${schemas}
+        DEPENDS flatc
+    )
+    add_dependencies(${target} compile_schemas)
+endfunction()
+
+
 ### Tests ###
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     FetchContent_Declare(
@@ -108,19 +128,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     target_compile_features(tests PRIVATE cxx_std_20)
     target_link_libraries(tests PRIVATE skymarlin::libnet Catch2::Catch2WithMain)
 
-    add_custom_target(
-        compile_schema
-        COMMAND
-            flatc
-            --cpp
-            --cpp-std c++17
-            --filename-suffix "\"\""
-            --filename-ext hpp
-            -o "${CMAKE_CURRENT_SOURCE_DIR}/test"
-            "${CMAKE_CURRENT_SOURCE_DIR}/test/SimpleMessage.fbs"
-        DEPENDS flatc
-    )
-    add_dependencies(tests compile_schema)
+    CompileSchemas(tests "" test test/SimpleMessage.fbs)
 
     enable_testing()
     add_test(NAME libnet-tests COMMAND tests)
