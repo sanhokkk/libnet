@@ -17,6 +17,7 @@ public:
 
     void Start();
     void Stop();
+    void SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer> message);
 
     ClientId id() const { return id_; }
     bool running() const { return running_; }
@@ -60,6 +61,10 @@ inline void Client::Stop() {
     connection_.Disconnect();
 
     OnStop();
+}
+
+inline void Client::SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer> message) {
+    connection_.SendMessage(std::move(message));
 }
 
 inline boost::asio::awaitable<void> Client::ProcessReceiveQueue() {
