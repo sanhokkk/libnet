@@ -90,6 +90,7 @@ install(FILES
 
 ### Utilities ###
 function(CompileSchemas target options out_path schemas)
+    message("Schemas to compile: ${schemas}")
     set(compile_target_name "compile_schemas_${target}")
     add_custom_target(
         ${compile_target_name}

@@ -42,7 +42,7 @@ inline void Listener::Stop() {
     try {
         acceptor_.close();
     } catch (const boost::system::system_error& e) {
-        SKYMARLIN_LOG_ERROR("Error closing listener: {}", e.what());
+        SKYMARLIN_LOG_ERROR("[Listener] Error closing: {}", e.what());
     }
 }
 
@@ -55,16 +55,17 @@ inline boost::asio::awaitable<void> Listener::Listen() {
 
         if (const auto [ec] = co_await acceptor_.async_accept(socket.lowest_layer(),
                                                               as_tuple(boost::asio::use_awaitable)); ec) {
-            SKYMARLIN_LOG_ERROR("Error on accepting: {}", ec.what());
+            SKYMARLIN_LOG_ERROR("[Listener] Error on accepting: {}", ec.what());
             continue;
         }
 
         const auto client = ClientManager::CreateClient(io_context_, std::move(socket));
         if (!client) {
-            SKYMARLIN_LOG_ERROR("Failed to create a client on accept");
+            SKYMARLIN_LOG_ERROR("[Listener] Failed to create a client");
             co_return;
         }
 
+        SKYMARLIN_LOG_DEBUG("[Listener] Accpeted on {}::{}", client->remote_endpoint().address().to_string(), client->remote_endpoint().port());
         client->Start();
     }
 }

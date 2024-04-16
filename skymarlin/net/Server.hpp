@@ -47,7 +47,6 @@ inline void Server::Start() {
 }
 
 inline void Server::Stop() {
-    SKYMARLIN_LOG_INFO("Stopping the server...");
     running_ = false;
 
     listener_.Stop();
