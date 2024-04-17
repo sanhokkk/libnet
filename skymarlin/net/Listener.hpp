@@ -47,7 +47,7 @@ inline void Listener::Stop() {
 }
 
 inline boost::asio::awaitable<void> Listener::Listen() {
-    SKYMARLIN_LOG_INFO("Start listening on {}:{}", acceptor_.local_endpoint().address().to_string(),
+    SKYMARLIN_LOG_INFO("[Listener] Start accepting on {}:{}", acceptor_.local_endpoint().address().to_string(),
                        acceptor_.local_endpoint().port());
 
     while (listening_) {
@@ -65,7 +65,7 @@ inline boost::asio::awaitable<void> Listener::Listen() {
             co_return;
         }
 
-        SKYMARLIN_LOG_DEBUG("[Listener] Accpeted on {}::{}", client->remote_endpoint().address().to_string(), client->remote_endpoint().port());
+        SKYMARLIN_LOG_DEBUG("[Listener] Accpeted on {}:{}", client->remote_endpoint().address().to_string(), client->remote_endpoint().port());
         client->Start();
     }
 }
