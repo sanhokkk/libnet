@@ -3,7 +3,6 @@
 #include <boost/asio.hpp>
 #include <skymarlin/net/ClientManager.hpp>
 #include <skymarlin/net/Listener.hpp>
-#include <skymarlin/util/Log.hpp>
 
 namespace skymarlin::net {
 struct ServerConfig {

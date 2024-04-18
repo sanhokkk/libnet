@@ -2,8 +2,7 @@
 #include <skymarlin/net/Client.hpp>
 #include <skymarlin/net/Connection.hpp>
 #include <skymarlin/net/Server.hpp>
-
-#include "SimpleMessage.hpp"
+#include <test/SimpleMessage.hpp>
 
 #include <chrono>
 
@@ -15,12 +14,12 @@ public:
 
 private:
     void OnStart() override {
-        SKYMARLIN_LOG_INFO("SimpleClient OnStart connected to {}:{}", remote_endpoint().address().to_string(),
+        spdlog::info("SimpleClient OnStart connected to {}:{}", remote_endpoint().address().to_string(),
                            remote_endpoint().port());
     }
 
     void OnStop() override {
-        SKYMARLIN_LOG_INFO("SimpleClient stopping");
+        spdlog::info("SimpleClient stopping");
     }
 
     void HandleMessage(std::vector<uint8_t>&& buffer) override {
@@ -32,7 +31,7 @@ private:
         CHECK(message_type == MessageType::SimpleMessage);
 
         const auto simple_message = message->message_as<SimpleMessage>();
-        SKYMARLIN_LOG_INFO("hello world: {} {}", simple_message->hello()->c_str(), simple_message->world()->c_str());
+        spdlog::info("hello world: {} {}", simple_message->hello()->c_str(), simple_message->world()->c_str());
 
         Stop();
     }
@@ -54,7 +53,7 @@ private:
     }
 
     void OnStop() override {
-        SKYMARLIN_LOG_INFO("SimpleServer stopping");
+        spdlog::info("SimpleServer stopping");
     }
 };
 
@@ -72,14 +71,10 @@ TEST_CASE("Simple message exchange", "[net]") {
     server.Start();
 
     boost::asio::io_context client_context {};
-    util::ConcurrentQueue<std::vector<uint8_t>> client_receive_queue {}; // Not used
-    Connection client_connection {client_context, tcp::socket {client_context}, client_receive_queue, [] {}};
-
-    co_spawn(client_context, [&client_connection]()-> boost::asio::awaitable<void> {
-        {
-            const auto result = co_await Connection::Connect(client_connection, "localhost", PORT);
-            CHECK(result);
-        }
+    co_spawn(client_context, [&client_context]()-> boost::asio::awaitable<void> {
+        tcp::socket socket {client_context};
+        socket.connect(tcp::endpoint(boost::asio::ip::address::from_string("::1"), PORT));
+        SimpleClient client {client_context, std::move(socket), 0};
 
         // Send SimpleMessage
         flatbuffers::FlatBufferBuilder builder(64);
@@ -89,8 +84,10 @@ TEST_CASE("Simple message exchange", "[net]") {
         builder.FinishSizePrefixed(CreateMessage(builder, MessageType::SimpleMessage, simple_message.Union()));
 
         auto buffer = std::make_shared<flatbuffers::DetachedBuffer>(builder.Release());
-        SKYMARLIN_LOG_INFO("Send {} bytes", buffer->size());
-        client_connection.SendMessage(buffer);
+        spdlog::info("Send {} bytes", buffer->size());
+        client.SendMessage(buffer);
+
+        co_return;
     }, boost::asio::detached);
 
     std::thread t1([&server_context] {

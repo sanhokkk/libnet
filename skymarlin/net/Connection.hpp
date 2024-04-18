@@ -2,8 +2,8 @@
 
 #include <boost/asio.hpp>
 #include <flatbuffers/flatbuffers.h>
-#include <skymarlin/util/Log.hpp>
 #include <skymarlin/util/Queue.hpp>
+#include <spdlog/spdlog.h>
 
 namespace skymarlin::net {
 using boost::asio::ip::tcp;
@@ -18,7 +18,6 @@ public:
     void Disconnect();
     void StartReceiveMessage();
     void SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer> message);
-    static boost::asio::awaitable<bool> Connect(Connection& connection, std::string_view host, uint16_t port);
 
     bool connected() const { return connected_; }
     tcp::endpoint local_endpoint() const { return socket_.lowest_layer().local_endpoint(); }
@@ -48,7 +47,7 @@ inline Connection::Connection(boost::asio::io_context& io_context, tcp::socket&&
 
 inline Connection::~Connection() {
     if (connected_) {
-        SKYMARLIN_LOG_WARN("Connection destructing without being disconnected");
+        spdlog::warn("[Connection] Destructor called while connected");
     }
 }
 
@@ -75,7 +74,7 @@ inline void Connection::Disconnect() {
         //TODO: Process remaining send queue?
         socket_.close();
     } catch (const boost::system::system_error& e) {
-        SKYMARLIN_LOG_ERROR("Error on shutdwon socket: {}", e.what());
+        spdlog::error("[Connection] Error shutting down socket: {}", e.what());
     }
 }
 
@@ -119,37 +118,12 @@ inline boost::asio::awaitable<void> Connection::ProcessSendQueue() {
         if (auto [ec, _] = co_await async_write(socket_,
                                                 boost::asio::buffer(buffer->data(), buffer->size()),
                                                 as_tuple(boost::asio::use_awaitable)); ec) {
-            SKYMARLIN_LOG_ERROR("Error on sending packet: {}", ec.what());
+            spdlog::error("[Connection] Error on sending packet: {}", ec.what());
             Disconnect();
             co_return;
         }
     }
 
     send_queue_processing_ = false;
-}
-
-inline boost::asio::awaitable<bool> Connection::Connect(Connection& connection, std::string_view host, uint16_t port) {
-    tcp::resolver resolver {connection.io_context_};
-
-    SKYMARLIN_LOG_INFO("Trying to connect to {}:{}", host, port);
-    const auto [ec, endpoints] = co_await resolver.async_resolve(host,
-                                                                 std::format("{}", port),
-                                                                 as_tuple(boost::asio::use_awaitable));
-    if (ec) {
-        SKYMARLIN_LOG_ERROR("Error on resolve: {}", ec.what());
-        connection.connected_ = false;
-        co_return false;
-    }
-
-    if (const auto [ec, endpoint] = co_await async_connect(connection.socket_, endpoints,
-                                                           as_tuple(boost::asio::use_awaitable)); ec) {
-        SKYMARLIN_LOG_ERROR("Error on connect: {}", ec.what());
-        connection.connected_ = false;
-        co_return false;
-    }
-
-    SKYMARLIN_LOG_INFO("Connected to {}:{}", host, port);
-
-    co_return true;
 }
 }

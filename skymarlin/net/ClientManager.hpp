@@ -1,8 +1,8 @@
 #pragma once
 
 #include <skymarlin/net/Client.hpp>
-#include <skymarlin/util/Log.hpp>
 #include <skymarlin/util/Map.hpp>
+#include <spdlog/spdlog.h>
 
 namespace skymarlin::net {
 using ClientFactory = std::function<std::shared_ptr<Client>(boost::asio::io_context&, tcp::socket&&, ClientId id)>;
@@ -47,7 +47,7 @@ inline void ClientManager::AddClient(const std::shared_ptr<Client>& client) {
 
 inline void ClientManager::RemoveClient(const std::shared_ptr<Client>& session) {
     if (!clients_.Contains(session->id())) {
-        SKYMARLIN_LOG_ERROR("Removing un-added session with id({})", session->id());
+        spdlog::error("Removing un-added session with id({})", session->id());
         return;
     }
     clients_.Erase(session->id());
@@ -55,7 +55,7 @@ inline void ClientManager::RemoveClient(const std::shared_ptr<Client>& session) 
 
 inline void ClientManager::RemoveClient(const ClientId id) {
     if (!clients_.Contains(id)) {
-        SKYMARLIN_LOG_ERROR("Removing un-added session with id({})", id);
+        spdlog::error("Removing un-added session with id({})", id);
         return;
     }
     clients_.Erase(id);
