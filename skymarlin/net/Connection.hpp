@@ -88,7 +88,7 @@ inline void Connection::SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer>
 }
 
 inline boost::asio::awaitable<std::optional<std::vector<uint8_t>>> Connection::ReceiveMessage() {
-    constexpr size_t MESSAGE_SIZE_PREFIX_BYTES = 4;
+    constexpr size_t MESSAGE_SIZE_PREFIX_BYTES = sizeof(flatbuffers::uoffset_t);
 
     std::array<uint8_t, MESSAGE_SIZE_PREFIX_BYTES> header_buffer {};
     if (const auto [ec, _] = co_await async_read(socket_,
@@ -98,9 +98,9 @@ inline boost::asio::awaitable<std::optional<std::vector<uint8_t>>> Connection::R
         co_return std::nullopt;
     }
 
-    const auto size = flatbuffers::GetSizePrefixedBufferLength(header_buffer.data());
+    const auto length = flatbuffers::GetSizePrefixedBufferLength(header_buffer.data());
     //TODO: Managed memory allocation
-    std::vector<uint8_t> body_buffer(size - MESSAGE_SIZE_PREFIX_BYTES);
+    std::vector<uint8_t> body_buffer(length - MESSAGE_SIZE_PREFIX_BYTES);
 
     if (const auto [ec, _] = co_await async_read(socket_,
                                                  boost::asio::buffer(body_buffer),
