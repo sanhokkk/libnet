@@ -49,7 +49,7 @@ inline void Server::Stop() {
     running_ = false;
 
     listener_.Stop();
-    ClientManager::ClearClients();
+    ClientManager::clients().Clear();
 
     OnStop();
 }
