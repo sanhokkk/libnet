@@ -11,11 +11,10 @@ public:
     static void Init(ClientFactory client_factory);
     static std::shared_ptr<Client> CreateClient(boost::asio::io_context& io_context, tcp::socket&& socket);
 
-    static util::ConcurrentMap<ClientId, std::shared_ptr<Client>>& clients() { return clients_; }
+    inline static util::ConcurrentMap<ClientId, std::shared_ptr<Client>> clients;
 
 private:
     inline static ClientFactory client_factory_;
-    inline static util::ConcurrentMap<ClientId, std::shared_ptr<Client>> clients_;
     inline static std::atomic<ClientId> id_generator {0};
 };
 
@@ -25,7 +24,7 @@ inline void ClientManager::Init(ClientFactory client_factory) {
 
 inline std::shared_ptr<Client> ClientManager::CreateClient(boost::asio::io_context& io_context, tcp::socket&& socket) {
     auto client = client_factory_(io_context, std::move(socket), ++id_generator);
-    clients_.InsertOrAssign(client->id(), client);
+    clients.InsertOrAssign(client->id(), client);
     return client;
 }
 }
