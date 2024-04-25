@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include <skymarlin/util/Map.hpp>
+#include <skymarlin/util/ConcurrentMap.hpp>
 
 #include <thread>
 
@@ -29,7 +29,7 @@ TEST_CASE("Insert/Erase thread safety", "[ConcurrentMap]")
     REQUIRE(map.empty());
 }
 
-TEST_CASE("ForEachAll")
+TEST_CASE("ForEachAll", "[ConcurrentMap]")
 {
     ConcurrentMap<int, int> map {};
     map.InsertOrAssign(1, 10);
@@ -50,7 +50,7 @@ TEST_CASE("ForEachAll")
     REQUIRE(v3 == 35);
 }
 
-TEST_CASE("ForEachSome")
+TEST_CASE("ForEachSome", "[ConcurrentMap]")
 {
     ConcurrentMap<int, int> map {};
     map.InsertOrAssign(1, 10);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <skymarlin/net/Client.hpp>
-#include <skymarlin/util/Map.hpp>
+#include <skymarlin/util/ConcurrentMap.hpp>
 
 namespace skymarlin::net {
 using ClientFactory = std::function<std::shared_ptr<Client>(boost::asio::io_context&, tcp::socket&&, ClientId id)>;

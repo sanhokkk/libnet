@@ -120,9 +120,8 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     FetchContent_MakeAvailable(Catch2)
 
     add_executable(tests
-        skymarlin/util/BitConverter.test.cpp
-        skymarlin/util/Map.test.cpp
-        skymarlin/util/Queue.test.cpp
+        skymarlin/util/ConcurrentMap.test.cpp
+        skymarlin/util/ConcurrentQueue.test.cpp
 
         test/Network.test.cpp
     )
