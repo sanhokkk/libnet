@@ -9,7 +9,7 @@ using ClientFactory = std::function<std::shared_ptr<Client>(boost::asio::io_cont
 class ClientManager {
 public:
     static void Init(ClientFactory client_factory);
-    static std::shared_ptr<Client> CreateClient(boost::asio::io_context& io_context, tcp::socket&& socket);
+    static std::shared_ptr<Client> CreateClient(boost::asio::io_context& ctx, tcp::socket&& socket);
 
     inline static util::ConcurrentMap<ClientId, std::shared_ptr<Client>> clients;
 
@@ -22,8 +22,8 @@ inline void ClientManager::Init(ClientFactory client_factory) {
     client_factory_ = std::move(client_factory);
 }
 
-inline std::shared_ptr<Client> ClientManager::CreateClient(boost::asio::io_context& io_context, tcp::socket&& socket) {
-    auto client = client_factory_(io_context, std::move(socket), ++id_generator);
+inline std::shared_ptr<Client> ClientManager::CreateClient(boost::asio::io_context& ctx, tcp::socket&& socket) {
+    auto client = client_factory_(ctx, std::move(socket), ++id_generator);
     clients.InsertOrAssign(client->id(), client);
     return client;
 }

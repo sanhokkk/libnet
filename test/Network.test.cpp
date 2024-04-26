@@ -9,8 +9,8 @@
 namespace skymarlin::net::test {
 class SimpleClient final : public Client {
 public:
-    SimpleClient(boost::asio::io_context &io_context, tcp::socket &&socket, const ClientId id) :
-        Client(io_context, std::move(socket), id) {}
+    SimpleClient(boost::asio::io_context &ctx, tcp::socket &&socket, const ClientId id) :
+        Client(ctx, std::move(socket), id) {}
 
 private:
     void OnStart() override {
@@ -39,13 +39,13 @@ private:
 
 class SimpleServer final : public Server {
 public:
-    SimpleServer(ServerConfig &&config, boost::asio::io_context &io_context) :
-        Server(std::move(config), io_context) {}
+    SimpleServer(ServerConfig &&config, boost::asio::io_context &ctx) :
+        Server(std::move(config), ctx) {}
 
 private:
     void OnStart() override {
-        co_spawn(io_context_, [this]()-> boost::asio::awaitable<void> {
-            boost::asio::steady_timer timer(io_context_, std::chrono::milliseconds(500));
+        co_spawn(ctx_, [this]()-> boost::asio::awaitable<void> {
+            boost::asio::steady_timer timer(ctx_, std::chrono::milliseconds(500));
             co_await timer.async_wait(boost::asio::use_awaitable);
 
             Stop();
@@ -60,32 +60,32 @@ private:
 TEST_CASE("Disconnect from client", "[net]") {
     constexpr unsigned short PORT = 55555;
 
-    boost::asio::io_context server_context {};
+    boost::asio::io_context server_ctx {};
     SimpleServer server {
         ServerConfig(PORT),
-        server_context,
+        server_ctx,
     };
-    ClientManager::Init([](boost::asio::io_context &io_context, tcp::socket &&socket, ClientId id) {
-        return std::make_shared<SimpleClient>(io_context, std::move(socket), id);
+    ClientManager::Init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientId id) {
+        return std::make_shared<SimpleClient>(ctx, std::move(socket), id);
     });
     server.Start();
-    std::thread t1([&server_context] {
-        server_context.run();
+    std::thread t1([&server_ctx] {
+        server_ctx.run();
     });
 
-    boost::asio::io_context client_context {};
-    co_spawn(client_context, [&client_context]()-> boost::asio::awaitable<void> {
-        tcp::socket socket {client_context};
+    boost::asio::io_context client_ctx {};
+    co_spawn(client_ctx, [&client_ctx]()-> boost::asio::awaitable<void> {
+        tcp::socket socket {client_ctx};
 
         const auto [ec] = co_await socket.async_connect(
             tcp::endpoint(boost::asio::ip::address::from_string("::1"), PORT), as_tuple(boost::asio::use_awaitable));
         if (ec) FAIL();
 
-        SimpleClient client {client_context, std::move(socket), 0};
+        SimpleClient client {client_ctx, std::move(socket), 0};
         client.Stop();
     }, boost::asio::detached);
-    std::thread t2([&client_context] {
-        client_context.run();
+    std::thread t2([&client_ctx] {
+        client_ctx.run();
     });
 
     t1.join();
@@ -95,21 +95,21 @@ TEST_CASE("Disconnect from client", "[net]") {
 TEST_CASE("Simple message exchange", "[net]") {
     constexpr unsigned short PORT = 55555;
 
-    boost::asio::io_context server_context {};
+    boost::asio::io_context server_ctx {};
     SimpleServer server {
         ServerConfig(PORT),
-        server_context,
+        server_ctx,
     };
-    ClientManager::Init([](boost::asio::io_context &io_context, tcp::socket &&socket, ClientId id) {
-        return std::make_shared<SimpleClient>(io_context, std::move(socket), id);
+    ClientManager::Init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientId id) {
+        return std::make_shared<SimpleClient>(ctx, std::move(socket), id);
     });
     server.Start();
 
-    boost::asio::io_context client_context {};
-    co_spawn(client_context, [&client_context]()-> boost::asio::awaitable<void> {
-        tcp::socket socket {client_context};
+    boost::asio::io_context client_ctx {};
+    co_spawn(client_ctx, [&client_ctx]()-> boost::asio::awaitable<void> {
+        tcp::socket socket {client_ctx};
         socket.connect(tcp::endpoint(boost::asio::ip::address::from_string("::1"), PORT));
-        SimpleClient client {client_context, std::move(socket), 0};
+        SimpleClient client {client_ctx, std::move(socket), 0};
 
         // Send SimpleMessage
         flatbuffers::FlatBufferBuilder builder(64);
@@ -125,11 +125,11 @@ TEST_CASE("Simple message exchange", "[net]") {
         co_return;
     }, boost::asio::detached);
 
-    std::thread t1([&server_context] {
-        server_context.run();
+    std::thread t1([&server_ctx] {
+        server_ctx.run();
     });
-    std::thread t2([&client_context] {
-        client_context.run();
+    std::thread t2([&client_ctx] {
+        client_ctx.run();
     });
 
     t1.join();

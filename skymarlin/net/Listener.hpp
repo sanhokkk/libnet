@@ -10,7 +10,7 @@ using boost::asio::ip::tcp;
 
 class Listener final : boost::noncopyable {
 public:
-    Listener(boost::asio::io_context& io_context, unsigned short port);
+    Listener(boost::asio::io_context& ctx, unsigned short port);
 
     ~Listener() = default;
 
@@ -21,19 +21,19 @@ public:
 private:
     boost::asio::awaitable<void> Listen();
 
-    boost::asio::io_context& io_context_;
+    boost::asio::io_context& ctx_;
     tcp::acceptor acceptor_;
 
     std::atomic<bool> listening_ {false};
 };
 
-inline Listener::Listener(boost::asio::io_context& io_context, const unsigned short port)
-    : io_context_(io_context),
-    acceptor_(io_context, tcp::endpoint(tcp::v6(), port)) {}
+inline Listener::Listener(boost::asio::io_context& ctx, const unsigned short port)
+    : ctx_(ctx),
+    acceptor_(ctx, tcp::endpoint(tcp::v6(), port)) {}
 
 inline void Listener::Start() {
     listening_ = true;
-    co_spawn(io_context_, Listen(), boost::asio::detached);
+    co_spawn(ctx_, Listen(), boost::asio::detached);
 }
 
 inline void Listener::Stop() {
@@ -52,14 +52,14 @@ inline boost::asio::awaitable<void> Listener::Listen() {
         acceptor_.local_endpoint().port());
 
     while (listening_) {
-        tcp::socket socket {io_context_};
+        tcp::socket socket {ctx_};
 
         if (const auto [ec] = co_await acceptor_.async_accept(socket, as_tuple(boost::asio::use_awaitable)); ec) {
             spdlog::error("[Listener] Error on accepting: {}", ec.what());
             continue;
         }
 
-        const auto client = ClientManager::CreateClient(io_context_, std::move(socket));
+        const auto client = ClientManager::CreateClient(ctx_, std::move(socket));
         if (!client) {
             spdlog::error("[Listener] Failed to create a client");
             continue;

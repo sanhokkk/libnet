@@ -12,7 +12,7 @@ struct ServerConfig {
 
 class Server : boost::noncopyable {
 public:
-    Server(ServerConfig&& config, boost::asio::io_context& io_context);
+    Server(ServerConfig&& config, boost::asio::io_context& ctx);
     virtual ~Server() = default;
 
     void Start();
@@ -22,7 +22,7 @@ public:
 
 protected:
     const ServerConfig config_;
-    boost::asio::io_context& io_context_;
+    boost::asio::io_context& ctx_;
 
 private:
     virtual void OnStart() = 0;
@@ -33,10 +33,10 @@ private:
 };
 
 
-inline Server::Server(ServerConfig&& config, boost::asio::io_context& io_context)
+inline Server::Server(ServerConfig&& config, boost::asio::io_context& ctx)
     : config_(std::move(config)),
-      io_context_(io_context),
-      listener_(io_context_, config_.listen_port) {}
+      ctx_(ctx),
+      listener_(ctx_, config_.listen_port) {}
 
 inline void Server::Start() {
     running_ = true;

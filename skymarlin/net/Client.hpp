@@ -11,7 +11,7 @@ using ClientId = uint32_t;
 
 class Client : boost::noncopyable {
 public:
-    Client(boost::asio::io_context& io_context, tcp::socket&& socket, ClientId id);
+    Client(boost::asio::io_context& ctx, tcp::socket&& socket, ClientId id);
 
     virtual ~Client() = default;
 
@@ -30,7 +30,7 @@ private:
 
     boost::asio::awaitable<void> ProcessReceiveQueue();
 
-    boost::asio::io_context& io_context_;
+    boost::asio::io_context& ctx_;
 
     const ClientId id_;
     std::atomic<bool> running_ {false};
@@ -41,9 +41,9 @@ private:
 };
 
 
-inline Client::Client(boost::asio::io_context& io_context, tcp::socket&& socket, const ClientId id)
-    : io_context_(io_context), id_(id),
-      connection_(io_context, std::move(socket), receive_queue_) {}
+inline Client::Client(boost::asio::io_context& ctx, tcp::socket&& socket, const ClientId id)
+    : ctx_(ctx), id_(id),
+      connection_(ctx, std::move(socket), receive_queue_) {}
 
 inline void Client::Start() {
     running_ = true;

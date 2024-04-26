@@ -10,7 +10,7 @@ using boost::asio::ip::tcp;
 
 class Connection final : public std::enable_shared_from_this<Connection> {
 public:
-    Connection(boost::asio::io_context& io_context, tcp::socket&& socket,
+    Connection(boost::asio::io_context& ctx, tcp::socket&& socket,
         util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue);
     ~Connection();
 
@@ -26,7 +26,7 @@ private:
     boost::asio::awaitable<std::optional<std::vector<uint8_t>>> ReceiveMessage();
     boost::asio::awaitable<void> ProcessSendQueue();
 
-    boost::asio::io_context& io_context_;
+    boost::asio::io_context& ctx_;
     tcp::socket socket_;
     std::atomic<bool> connected_ {true};
 
@@ -35,9 +35,9 @@ private:
 };
 
 
-inline Connection::Connection(boost::asio::io_context& io_context, tcp::socket&& socket,
+inline Connection::Connection(boost::asio::io_context& ctx, tcp::socket&& socket,
     util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue)
-    : io_context_(io_context), socket_(std::move(socket)), receive_queue_(receive_queue) {}
+    : ctx_(ctx), socket_(std::move(socket)), receive_queue_(receive_queue) {}
 
 inline Connection::~Connection() {
     if (connected_) {
@@ -48,7 +48,7 @@ inline Connection::~Connection() {
 inline void Connection::Start() {
     if (!connected_) return;
 
-    co_spawn(io_context_, [this]()-> boost::asio::awaitable<void> {
+    co_spawn(ctx_, [this]()-> boost::asio::awaitable<void> {
         while (connected_) {
             auto message = co_await ReceiveMessage();
             if (!message) continue;
@@ -57,7 +57,7 @@ inline void Connection::Start() {
         }
     }, boost::asio::detached);
 
-    co_spawn(io_context_, [this]()-> boost::asio::awaitable<void> {
+    co_spawn(ctx_, [this]()-> boost::asio::awaitable<void> {
         while (connected_) {
             const auto message = send_queue_.Pop();
             if (!message) continue;
