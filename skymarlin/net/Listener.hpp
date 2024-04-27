@@ -57,15 +57,7 @@ inline boost::asio::awaitable<void> Listener::Listen() {
             continue;
         }
 
-        const auto client = ClientManager::CreateClient(ctx_, std::move(socket));
-        if (!client) {
-            spdlog::error("[Listener] Failed to create a client");
-            continue;
-        }
-
-        spdlog::debug("[Listener] Accpeted on {}:{}", client->remote_endpoint().address().to_string(),
-            client->remote_endpoint().port());
-        client->Start();
+        const auto _ = ClientManager::CreateClient(ctx_, std::move(socket));
     }
 }
 }

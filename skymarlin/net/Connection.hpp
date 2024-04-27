@@ -40,9 +40,7 @@ inline Connection::Connection(boost::asio::io_context& ctx, tcp::socket&& socket
     : ctx_(ctx), socket_(std::move(socket)), receive_queue_(receive_queue) {}
 
 inline Connection::~Connection() {
-    if (connected_) {
-        spdlog::warn("[Connection] Destructor called while connected");
-    }
+    Disconnect();
 }
 
 inline void Connection::Start() {

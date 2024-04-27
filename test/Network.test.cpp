@@ -66,7 +66,7 @@ TEST_CASE("Disconnect from client", "[net]") {
         server_ctx,
     };
     ClientManager::Init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientId id) {
-        return std::make_shared<SimpleClient>(ctx, std::move(socket), id);
+        return std::make_unique<SimpleClient>(ctx, std::move(socket), id);
     });
     server.Start();
     std::thread t1([&server_ctx] {
@@ -101,7 +101,7 @@ TEST_CASE("Simple message exchange", "[net]") {
         server_ctx,
     };
     ClientManager::Init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientId id) {
-        return std::make_shared<SimpleClient>(ctx, std::move(socket), id);
+        return std::make_unique<SimpleClient>(ctx, std::move(socket), id);
     });
     server.Start();
 

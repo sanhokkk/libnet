@@ -5,11 +5,9 @@
 #include <skymarlin/net/Connection.hpp>
 
 namespace skymarlin::net {
-class Client;
-
 using ClientId = uint32_t;
 
-class Client : boost::noncopyable, protected std::enable_shared_from_this<Client> {
+class Client : boost::noncopyable {
 public:
     Client(boost::asio::io_context& ctx, tcp::socket&& socket, ClientId id);
     virtual ~Client() = default;
