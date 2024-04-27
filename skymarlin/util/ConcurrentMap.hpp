@@ -60,7 +60,7 @@ public:
     }
 
     template <typename Function, typename... Args> requires std::invocable<Function, ValueType&, Args...>
-    void ForEachAll(Function&& function, Args&&... args)
+    void ForEachAll(Function function, Args... args)
     {
         std::shared_lock lock(mutex);
 
@@ -73,7 +73,7 @@ public:
         requires std::invocable<Filter, const ValueType&>
         && std::same_as<bool, std::invoke_result_t<Filter, const ValueType&>>
         && std::invocable<Function, ValueType&, Args...>
-    void ForEachSome(Filter&& filter, Function&& function, Args&&... args)
+    void ForEachSome(Filter filter, Function function, Args... args)
     {
         std::shared_lock lock(mutex);
 

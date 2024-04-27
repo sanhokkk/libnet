@@ -34,7 +34,7 @@ inline void ClientManager::Broadcast(std::shared_ptr<flatbuffers::DetachedBuffer
     std::shared_ptr<Client> except = nullptr) {
     if (except) {
         clients.ForEachSome(
-            [&except](const std::shared_ptr<Client>& client) { return client == except; },
+            [except = std::move(except)](const std::shared_ptr<Client>& client) { return client != except; },
             [](const std::shared_ptr<Client>& client, std::shared_ptr<flatbuffers::DetachedBuffer> message) {
                 client->SendMessage(message);
             }, std::move(message));

@@ -11,11 +11,9 @@ using boost::asio::ip::tcp;
 class Listener final : boost::noncopyable {
 public:
     Listener(boost::asio::io_context& ctx, unsigned short port);
-
     ~Listener() = default;
 
     void Start();
-
     void Stop();
 
 private:
