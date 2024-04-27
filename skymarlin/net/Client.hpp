@@ -23,6 +23,9 @@ public:
     bool running() const { return running_; }
     tcp::endpoint remote_endpoint() const { return connection_.remote_endpoint(); }
 
+protected:
+    void set_id(const ClientId id) { id_ = id; }
+
 private:
     virtual void OnStart() = 0;
     virtual void OnStop() = 0;
@@ -32,7 +35,7 @@ private:
 
     boost::asio::io_context& ctx_;
 
-    const ClientId id_;
+    ClientId id_;
     std::atomic<bool> running_ {false};
     util::ConcurrentQueue<std::vector<uint8_t>> receive_queue_ {};
     std::atomic<bool> receive_queue_processing_ {false};
@@ -43,7 +46,7 @@ private:
 
 inline Client::Client(boost::asio::io_context& ctx, tcp::socket&& socket, const ClientId id)
     : ctx_(ctx), id_(id),
-      connection_(ctx, std::move(socket), receive_queue_) {}
+    connection_(ctx, std::move(socket), receive_queue_) {}
 
 inline void Client::Start() {
     running_ = true;
