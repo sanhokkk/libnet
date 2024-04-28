@@ -43,20 +43,13 @@ private:
 
 inline Client::Client(boost::asio::io_context& ctx, tcp::socket&& socket, const ClientId id)
     : ctx_(ctx), id_(id),
-    connection_(ctx, std::move(socket), receive_queue_) {}
+    connection_(ctx, std::move(socket), receive_queue_, [this] {
+        if (receive_queue_processing_.exchange(true)) return;
+        co_spawn(ctx_, ProcessReceiveQueue(), boost::asio::detached);
+    }) {}
 
 inline void Client::Start() {
     running_ = true;
-    connection_.Start();
-
-    std::thread message_handle_thread([this] {
-        while (running_ && connection_.connected()) {
-            if (receive_queue_.empty()) continue;
-            HandleMessage(receive_queue_.Pop()); //TODO: Channel
-        }
-        Stop();
-    });
-    message_handle_thread.detach();
 
     OnStart();
 }
@@ -71,5 +64,14 @@ inline void Client::Stop() {
 
 inline void Client::SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer> message) {
     connection_.SendMessage(std::move(message));
+}
+
+inline boost::asio::awaitable<void> Client::ProcessReceiveQueue() {
+    while (!receive_queue_.empty()) {
+        HandleMessage(receive_queue_.Pop());
+    }
+
+    receive_queue_processing_ = false;
+    co_return;
 }
 }

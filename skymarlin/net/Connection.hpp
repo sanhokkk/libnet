@@ -11,10 +11,9 @@ using boost::asio::ip::tcp;
 class Connection final : public std::enable_shared_from_this<Connection> {
 public:
     Connection(boost::asio::io_context& ctx, tcp::socket&& socket,
-        util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue);
+        util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue, std::function<void()> message_received_callback);
     ~Connection();
 
-    void Start();
     void Disconnect();
     void SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer> message);
 
@@ -24,51 +23,36 @@ public:
 
 private:
     boost::asio::awaitable<std::optional<std::vector<uint8_t>>> ReceiveMessage();
-    boost::asio::awaitable<void> ProcessSendQueue();
 
     boost::asio::io_context& ctx_;
     tcp::socket socket_;
     std::atomic<bool> connected_ {true};
 
     util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue_;
+    std::function<void()> message_received_callback_;
     util::ConcurrentQueue<std::shared_ptr<flatbuffers::DetachedBuffer>> send_queue_ {};
+    std::atomic<bool> sending_ {false};
 };
 
 
 inline Connection::Connection(boost::asio::io_context& ctx, tcp::socket&& socket,
-    util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue)
-    : ctx_(ctx), socket_(std::move(socket)), receive_queue_(receive_queue) {}
-
-inline Connection::~Connection() {
-    Disconnect();
-}
-
-inline void Connection::Start() {
-    if (!connected_) return;
-
+    util::ConcurrentQueue<std::vector<uint8_t>>& receive_queue, std::function<void()> message_received_callback)
+    : ctx_(ctx), socket_(std::move(socket)),
+    receive_queue_(receive_queue), message_received_callback_(std::move(message_received_callback)) {
+    // Start receiving messages
     co_spawn(ctx_, [this]()-> boost::asio::awaitable<void> {
         while (connected_) {
             auto message = co_await ReceiveMessage();
             if (!message) continue;
 
             receive_queue_.Push(std::move(*message));
+            message_received_callback_();
         }
     }, boost::asio::detached);
+}
 
-    co_spawn(ctx_, [this]()-> boost::asio::awaitable<void> {
-        while (connected_) {
-            const auto message = send_queue_.Pop();
-            if (!message) continue;
-
-            if (auto [ec, _] = co_await async_write(socket_,
-                boost::asio::buffer(message->data(), message->size()),
-                as_tuple(boost::asio::use_awaitable)); ec) {
-                spdlog::error("[Connection] Error sending message: {}", ec.what());
-                Disconnect();
-                co_return;
-            }
-        }
-    }, boost::asio::detached);
+inline Connection::~Connection() {
+    Disconnect();
 }
 
 inline void Connection::Disconnect() {
@@ -88,6 +72,25 @@ inline void Connection::SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer>
     if (!message || !connected_) return;
 
     send_queue_.Push(std::move(message));
+
+    // Send all messages in send_queue_
+    if (sending_.exchange(true)) return;
+    co_spawn(ctx_, [this]()-> boost::asio::awaitable<void> {
+        while (!send_queue_.empty()) {
+            const auto message = send_queue_.Pop();
+            if (!message) continue;
+
+            if (auto [ec, _] = co_await async_write(socket_,
+                boost::asio::buffer(message->data(), message->size()),
+                as_tuple(boost::asio::use_awaitable)); ec) {
+                spdlog::error("[Connection] Error sending message: {}", ec.what());
+                Disconnect();
+                co_return;
+            }
+        }
+
+        sending_ = false;
+    }, boost::asio::detached);
 }
 
 inline boost::asio::awaitable<std::optional<std::vector<uint8_t>>> Connection::ReceiveMessage() {
