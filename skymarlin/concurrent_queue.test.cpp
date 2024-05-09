@@ -1,10 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
-#include <skymarlin/util/ConcurrentQueue.hpp>
+#include <skymarlin/concurrent_queue.hpp>
 
 #include <iostream>
 #include <thread>
 
-namespace skymarlin::util::test {
+using namespace skymarlin;
+
 TEST_CASE("Thread safety", "[ConcurrentQueue]") {
     constexpr int ITEM_COUNT = 10000;
     ConcurrentQueue<int> queue {};
@@ -12,17 +13,18 @@ TEST_CASE("Thread safety", "[ConcurrentQueue]") {
     std::thread t1([&queue] {
         int i {0};
         while (i < ITEM_COUNT) {
-            queue.Push(42);
+            queue.push(42);
             ++i;
         }
     });
 
-    std::thread t2([&queue]{
+    std::thread t2([&queue] {
         int i {0};
         while (i < ITEM_COUNT) {
-            if (queue.empty()) continue;
+            if (queue.empty())
+                continue;
 
-            queue.Pop();
+            queue.pop();
             ++i;
         }
     });
@@ -36,11 +38,10 @@ TEST_CASE("Thread safety", "[ConcurrentQueue]") {
 TEST_CASE("Pop empty queue", "[ConcurrentQueue]") {
     ConcurrentQueue<int> queue {};
     try {
-        queue.Pop();
-    } catch (const std::out_of_range& e) {
+        queue.pop();
+    } catch (const std::out_of_range &e) {
         INFO(std::format("Catch empty queue poping exception: {}", e.what()));
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         FAIL("Unexpected exception");
     }
-}
 }

@@ -2,7 +2,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
-#include <skymarlin/net/Connection.hpp>
+#include <skymarlin/net/connection.hpp>
 
 namespace skymarlin::net {
 using ClientId = uint32_t;
@@ -12,9 +12,9 @@ public:
     Client(boost::asio::io_context& ctx, tcp::socket&& socket, ClientId id);
     virtual ~Client() = default;
 
-    void Start();
-    void Stop();
-    void SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer> message);
+    void start();
+    void stop();
+    void send_message(std::shared_ptr<flatbuffers::DetachedBuffer> message);
 
     ClientId id() const { return id_; }
     bool running() const { return running_; }
@@ -24,8 +24,8 @@ protected:
     void set_id(const ClientId id) { id_ = id; }
 
 private:
-    virtual void OnStart() = 0;
-    virtual void OnStop() = 0;
+    virtual void on_start() = 0;
+    virtual void on_stop() = 0;
     virtual void HandleMessage(std::vector<uint8_t>&& buffer) = 0;
 
     boost::asio::awaitable<void> ProcessReceiveQueue();
@@ -34,7 +34,7 @@ private:
 
     ClientId id_;
     std::atomic<bool> running_ {false};
-    util::ConcurrentQueue<std::vector<uint8_t>> receive_queue_ {};
+    ConcurrentQueue<std::vector<uint8_t>> receive_queue_ {};
     std::atomic<bool> receive_queue_processing_ {false};
 
     Connection connection_;
@@ -48,27 +48,27 @@ inline Client::Client(boost::asio::io_context& ctx, tcp::socket&& socket, const 
         co_spawn(ctx_, ProcessReceiveQueue(), boost::asio::detached);
     }) {}
 
-inline void Client::Start() {
+inline void Client::start() {
     running_ = true;
 
-    OnStart();
+    on_start();
 }
 
-inline void Client::Stop() {
+inline void Client::stop() {
     if (!running_.exchange(false)) return;
 
-    connection_.Disconnect();
+    connection_.disconnect();
 
-    OnStop();
+    on_stop();
 }
 
-inline void Client::SendMessage(std::shared_ptr<flatbuffers::DetachedBuffer> message) {
-    connection_.SendMessage(std::move(message));
+inline void Client::send_message(std::shared_ptr<flatbuffers::DetachedBuffer> message) {
+    connection_.send_message(std::move(message));
 }
 
 inline boost::asio::awaitable<void> Client::ProcessReceiveQueue() {
     while (!receive_queue_.empty()) {
-        HandleMessage(receive_queue_.Pop());
+        HandleMessage(receive_queue_.pop());
     }
 
     receive_queue_processing_ = false;

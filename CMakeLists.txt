@@ -120,16 +120,16 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     FetchContent_MakeAvailable(Catch2)
 
     add_executable(tests
-        skymarlin/util/ConcurrentMap.test.cpp
-        skymarlin/util/ConcurrentQueue.test.cpp
+        skymarlin/concurrent_map.test.cpp
+        skymarlin/concurrent_queue.test.cpp
 
-        test/Network.test.cpp
+        tests/network.test.cpp
     )
 
     target_compile_features(tests PRIVATE cxx_std_20)
     target_link_libraries(tests PRIVATE skymarlin::libnet Catch2::Catch2WithMain)
 
-    CompileSchemas(tests "" test test/SimpleMessage.fbs)
+    CompileSchemas(tests "" tests tests/simple_message.fbs)
 
     enable_testing()
     add_test(NAME libnet-tests COMMAND tests)

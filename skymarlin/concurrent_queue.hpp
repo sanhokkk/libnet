@@ -3,7 +3,7 @@
 #include <mutex>
 #include <queue>
 
-namespace skymarlin::util {
+namespace skymarlin {
 template <typename T>
 class ConcurrentQueue {
 public:
@@ -12,13 +12,13 @@ public:
     ConcurrentQueue(const ConcurrentQueue&) = delete;
     ConcurrentQueue& operator=(const ConcurrentQueue&) = delete;
 
-    void Push(T&& value) {
+    void push(T&& value) {
         std::lock_guard lock {mutex_};
 
         queue_.push(std::forward<T>(value));
     }
 
-    T Pop() {
+    T pop() {
         std::lock_guard lock {mutex_};
 
         if (queue_.empty()) throw std::out_of_range("Pop from an empty queue");

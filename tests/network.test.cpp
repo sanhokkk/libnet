@@ -1,8 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
-#include <skymarlin/net/Client.hpp>
-#include <skymarlin/net/Connection.hpp>
-#include <skymarlin/net/Server.hpp>
-#include <test/SimpleMessage.hpp>
+#include <skymarlin/net/client.hpp>
+#include <skymarlin/net/server.hpp>
+#include <tests/simple_message.hpp>
 
 #include <chrono>
 
@@ -13,12 +12,12 @@ public:
         Client(ctx, std::move(socket), id) {}
 
 private:
-    void OnStart() override {
+    void on_start() override {
         spdlog::info("SimpleClient OnStart connected to {}:{}", remote_endpoint().address().to_string(),
             remote_endpoint().port());
     }
 
-    void OnStop() override {
+    void on_stop() override {
         spdlog::info("SimpleClient stopping");
     }
 
@@ -33,7 +32,7 @@ private:
         const auto simple_message = message->message_as<SimpleMessage>();
         spdlog::info("hello world: {} {}", simple_message->hello()->c_str(), simple_message->world()->c_str());
 
-        Stop();
+        stop();
     }
 };
 
@@ -43,16 +42,16 @@ public:
         Server(std::move(config), ctx) {}
 
 private:
-    void OnStart() override {
+    void on_start() override {
         co_spawn(ctx_, [this]()-> boost::asio::awaitable<void> {
             boost::asio::steady_timer timer(ctx_, std::chrono::milliseconds(500));
             co_await timer.async_wait(boost::asio::use_awaitable);
 
-            Stop();
+            stop();
         }, boost::asio::detached);
     }
 
-    void OnStop() override {
+    void on_stop() override {
         spdlog::info("SimpleServer stopping");
     }
 };
@@ -65,10 +64,10 @@ TEST_CASE("Disconnect from client", "[net]") {
         ServerConfig(PORT),
         server_ctx,
     };
-    ClientManager::Init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientId id) {
+    ClientManager::init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientId id) {
         return std::make_unique<SimpleClient>(ctx, std::move(socket), id);
     });
-    server.Start();
+    server.start();
     std::thread t1([&server_ctx] {
         server_ctx.run();
     });
@@ -82,7 +81,7 @@ TEST_CASE("Disconnect from client", "[net]") {
         if (ec) FAIL();
 
         SimpleClient client {client_ctx, std::move(socket), 0};
-        client.Stop();
+        client.stop();
     }, boost::asio::detached);
     std::thread t2([&client_ctx] {
         client_ctx.run();
@@ -100,10 +99,10 @@ TEST_CASE("Simple message exchange", "[net]") {
         ServerConfig(PORT),
         server_ctx,
     };
-    ClientManager::Init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientId id) {
+    ClientManager::init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientId id) {
         return std::make_unique<SimpleClient>(ctx, std::move(socket), id);
     });
-    server.Start();
+    server.start();
 
     boost::asio::io_context client_ctx {};
     co_spawn(client_ctx, [&client_ctx]()-> boost::asio::awaitable<void> {
@@ -120,7 +119,7 @@ TEST_CASE("Simple message exchange", "[net]") {
 
         auto buffer = std::make_shared<flatbuffers::DetachedBuffer>(builder.Release());
         spdlog::info("Send {} bytes", buffer->size());
-        client.SendMessage(buffer);
+        client.send_message(buffer);
 
         co_return;
     }, boost::asio::detached);

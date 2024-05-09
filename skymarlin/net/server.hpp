@@ -1,8 +1,8 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <skymarlin/net/ClientManager.hpp>
-#include <skymarlin/net/Listener.hpp>
+#include <skymarlin/net/client_manager.hpp>
+#include <skymarlin/net/listener.hpp>
 
 namespace skymarlin::net {
 struct ServerConfig {
@@ -10,13 +10,13 @@ struct ServerConfig {
 };
 
 
-class Server : boost::noncopyable {
+class Server {
 public:
     Server(ServerConfig&& config, boost::asio::io_context& ctx);
     virtual ~Server() = default;
 
-    void Start();
-    void Stop();
+    void start();
+    void stop();
 
     bool running() const { return running_; }
 
@@ -25,8 +25,8 @@ protected:
     boost::asio::io_context& ctx_;
 
 private:
-    virtual void OnStart() = 0;
-    virtual void OnStop() = 0;
+    virtual void on_start() = 0;
+    virtual void on_stop() = 0;
 
     Listener listener_;
     std::atomic<bool> running_ {false};
@@ -38,19 +38,19 @@ inline Server::Server(ServerConfig&& config, boost::asio::io_context& ctx)
       ctx_(ctx),
       listener_(ctx_, config_.listen_port) {}
 
-inline void Server::Start() {
+inline void Server::start() {
     running_ = true;
-    listener_.Start();
+    listener_.start();
 
-    OnStart();
+    on_start();
 }
 
-inline void Server::Stop() {
+inline void Server::stop() {
     running_ = false;
 
-    listener_.Stop();
-    ClientManager::clients.Clear();
+    listener_.stop();
+    ClientManager::clients.clear();
 
-    OnStop();
+    on_stop();
 }
 }

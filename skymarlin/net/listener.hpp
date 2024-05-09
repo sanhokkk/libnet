@@ -1,8 +1,8 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <skymarlin/net/Client.hpp>
-#include <skymarlin/net/ClientManager.hpp>
+#include <skymarlin/net/client.hpp>
+#include <skymarlin/net/client_manager.hpp>
 #include <spdlog/spdlog.h>
 
 namespace skymarlin::net {
@@ -13,11 +13,11 @@ public:
     Listener(boost::asio::io_context& ctx, unsigned short port);
     ~Listener() = default;
 
-    void Start();
-    void Stop();
+    void start();
+    void stop();
 
 private:
-    boost::asio::awaitable<void> Listen();
+    boost::asio::awaitable<void> listen();
 
     boost::asio::io_context& ctx_;
     tcp::acceptor acceptor_;
@@ -29,12 +29,12 @@ inline Listener::Listener(boost::asio::io_context& ctx, const unsigned short por
     : ctx_(ctx),
     acceptor_(ctx, tcp::endpoint(tcp::v6(), port)) {}
 
-inline void Listener::Start() {
+inline void Listener::start() {
     listening_ = true;
-    co_spawn(ctx_, Listen(), boost::asio::detached);
+    co_spawn(ctx_, listen(), boost::asio::detached);
 }
 
-inline void Listener::Stop() {
+inline void Listener::stop() {
     if (!listening_.exchange(false)) return;
 
     try {
@@ -45,7 +45,7 @@ inline void Listener::Stop() {
     }
 }
 
-inline boost::asio::awaitable<void> Listener::Listen() {
+inline boost::asio::awaitable<void> Listener::listen() {
     spdlog::info("[Listener] Start accepting on {}:{}", acceptor_.local_endpoint().address().to_string(),
         acceptor_.local_endpoint().port());
 
@@ -57,7 +57,7 @@ inline boost::asio::awaitable<void> Listener::Listen() {
             continue;
         }
 
-        const auto _ = ClientManager::CreateClient(ctx_, std::move(socket));
+        const auto _ = ClientManager::create_client(ctx_, std::move(socket));
     }
 }
 }
