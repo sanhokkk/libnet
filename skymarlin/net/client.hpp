@@ -26,9 +26,9 @@ protected:
 private:
     virtual void on_start() = 0;
     virtual void on_stop() = 0;
-    virtual void HandleMessage(std::vector<uint8_t>&& buffer) = 0;
+    virtual void handle_message(std::vector<uint8_t>&& buffer) = 0;
 
-    boost::asio::awaitable<void> ProcessReceiveQueue();
+    boost::asio::awaitable<void> process_receive_queue();
 
     boost::asio::io_context& ctx_;
 
@@ -45,7 +45,7 @@ inline Client::Client(boost::asio::io_context& ctx, tcp::socket&& socket, const 
     : ctx_(ctx), id_(id),
     connection_(ctx, std::move(socket), receive_queue_, [this] {
         if (receive_queue_processing_.exchange(true)) return;
-        co_spawn(ctx_, ProcessReceiveQueue(), boost::asio::detached);
+        co_spawn(ctx_, process_receive_queue(), boost::asio::detached);
     }) {}
 
 inline void Client::start() {
@@ -66,9 +66,9 @@ inline void Client::send_message(std::shared_ptr<flatbuffers::DetachedBuffer> me
     connection_.send_message(std::move(message));
 }
 
-inline boost::asio::awaitable<void> Client::ProcessReceiveQueue() {
+inline boost::asio::awaitable<void> Client::process_receive_queue() {
     while (!receive_queue_.empty()) {
-        HandleMessage(receive_queue_.pop());
+        handle_message(receive_queue_.pop());
     }
 
     receive_queue_processing_ = false;

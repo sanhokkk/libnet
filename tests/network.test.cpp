@@ -21,7 +21,7 @@ private:
         spdlog::info("SimpleClient stopping");
     }
 
-    void HandleMessage(std::vector<uint8_t> &&buffer) override {
+    void handle_message(std::vector<uint8_t> &&buffer) override {
         flatbuffers::Verifier verifier {buffer.data(), buffer.size()};
         CHECK(VerifyMessageBuffer(verifier));
 

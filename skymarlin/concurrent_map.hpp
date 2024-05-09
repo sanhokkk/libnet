@@ -42,7 +42,17 @@ public:
         return map_.contains(key);
     }
 
-    template <typename Function, typename... Args> requires std::invocable<Function, ValueType&, Args...>
+    template <typename Function, typename... Args>
+        requires std::invocable<Function, ValueType&, Args...>
+    void apply(const KeyType& key, Function function, Args... args) {
+        std::shared_lock lock {mutex_};
+
+        if (!map_.contains(key)) return;
+        function(map_[key], args...);
+    }
+
+    template <typename Function, typename... Args>
+        requires std::invocable<Function, ValueType&, Args...>
     void apply_all(Function function, Args... args) {
         std::shared_lock lock {mutex_};
 

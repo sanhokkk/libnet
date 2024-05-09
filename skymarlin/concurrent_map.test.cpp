@@ -29,7 +29,19 @@ TEST_CASE("Insert/Erase thread safety", "[ConcurrentMap]")
     REQUIRE(map.empty());
 }
 
-TEST_CASE("ForEachAll", "[ConcurrentMap]")
+TEST_CASE("apply", "[ConcurrentMap]")
+{
+    ConcurrentMap<int, int> map {};
+    map.insert_or_assign(2, 20);
+
+    map.apply(2, [](int& value, const int add) {
+        value += add;
+    }, 10);
+
+    REQUIRE(map.at(2) == 30);
+}
+
+TEST_CASE("apply_all", "[ConcurrentMap]")
 {
     ConcurrentMap<int, int> map {};
     map.insert_or_assign(1, 10);
@@ -46,7 +58,7 @@ TEST_CASE("ForEachAll", "[ConcurrentMap]")
     REQUIRE(map.at(3) == 35);
 }
 
-TEST_CASE("ForEachSome", "[ConcurrentMap]")
+TEST_CASE("apply_some", "[ConcurrentMap]")
 {
     ConcurrentMap<int, int> map {};
     map.insert_or_assign(1, 10);
