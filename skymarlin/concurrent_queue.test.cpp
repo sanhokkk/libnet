@@ -6,42 +6,53 @@
 
 using namespace skymarlin;
 
-TEST_CASE("Thread safety", "[ConcurrentQueue]") {
-    constexpr int ITEM_COUNT = 10000;
+TEST_CASE("[ConcurrentQueue]") {
+    constexpr size_t ITEM_COUNT = 10000;
+    constexpr int ITEM_VALUE = 42;
     ConcurrentQueue<int> queue {};
 
-    std::thread t1([&queue] {
-        int i {0};
-        while (i < ITEM_COUNT) {
-            queue.push(42);
-            ++i;
-        }
-    });
+    SECTION("The consumer busy-waits for the producers") {
+        std::thread producer1([&] {
+            size_t i {0};
+            while (i < ITEM_COUNT / 2) {
+                queue.push(ITEM_VALUE);
+                ++i;
+            }
+        });
 
-    std::thread t2([&queue] {
-        int i {0};
-        while (i < ITEM_COUNT) {
-            if (queue.empty())
-                continue;
+        std::thread producer2([&] {
+            size_t i {0};
+            while (i < ITEM_COUNT / 2) {
+                queue.push(ITEM_VALUE);
+                ++i;
+            }
+        });
 
-            queue.pop();
-            ++i;
-        }
-    });
+        std::thread consumer([&] {
+            size_t i {0};
+            while (i < ITEM_COUNT) {
+                if (queue.empty())
+                    continue;
 
-    t1.join();
-    t2.join();
+                auto v = queue.pop();
+                REQUIRE(v);
+                REQUIRE(*v == ITEM_VALUE);
+                ++i;
+            }
+        });
 
-    CHECK(queue.empty());
-}
+        producer1.join();
+        producer2.join();
+        consumer.join();
 
-TEST_CASE("Pop empty queue", "[ConcurrentQueue]") {
-    ConcurrentQueue<int> queue {};
-    try {
-        queue.pop();
-    } catch (const std::out_of_range &e) {
-        INFO(std::format("Catch empty queue poping exception: {}", e.what()));
-    } catch (const std::exception &e) {
-        FAIL("Unexpected exception");
+        REQUIRE(queue.empty());
+    }
+
+    SECTION("pop returns std::nullopt from the empty queue") {
+        queue.clear();
+        REQUIRE(queue.empty());
+
+        const auto v = queue.pop();
+        REQUIRE(!v);
     }
 }

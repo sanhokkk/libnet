@@ -1,0 +1,7 @@
+namespace skymarlin.net.tests;
+
+table Hello {
+    hello: string;
+}
+
+root_type Hello;

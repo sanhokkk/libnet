@@ -18,9 +18,9 @@ public:
         map_.insert_or_assign(key, value);
     }
 
-    void insert_or_assign(KeyType&& key, ValueType&& value) {
+    void insert_or_assign(const KeyType& key, ValueType&& value) {
         std::unique_lock lock {mutex_};
-        map_.insert_or_assign(std::forward<KeyType>(key), std::forward<ValueType>(value));
+        map_.insert_or_assign(key, std::forward<ValueType>(value));
     }
 
     ValueType at(const KeyType& key) const {
@@ -43,17 +43,17 @@ public:
     }
 
     template <typename Function, typename... Args>
-        requires std::invocable<Function, ValueType&, Args...>
-    void apply(const KeyType& key, Function function, Args... args) {
+        requires std::invocable<Function, ValueType&, Args&&...>
+    void apply(const KeyType& key, Function function, Args&&... args) {
         std::shared_lock lock {mutex_};
 
         if (!map_.contains(key)) return;
-        function(map_[key], args...);
+        function(map_[key], std::forward<Args>(args)...);
     }
 
     template <typename Function, typename... Args>
         requires std::invocable<Function, ValueType&, Args...>
-    void apply_all(Function function, Args... args) {
+    void apply_all(Function function, Args&&... args) {
         std::shared_lock lock {mutex_};
 
         for (auto& [_, value] : map_) {
@@ -65,7 +65,7 @@ public:
         requires std::invocable<Filter, const ValueType&>
         && std::same_as<bool, std::invoke_result_t<Filter, const ValueType&>>
         && std::invocable<Function, ValueType&, Args...>
-    void apply_some(Filter filter, Function function, Args... args) {
+    void apply_some(Filter filter, Function function, Args&&... args) {
         std::shared_lock lock {mutex_};
 
         for (auto& [_, value] : map_) {

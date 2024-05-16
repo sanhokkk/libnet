@@ -1,10 +1,17 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.28)
 project(libnet
     VERSION 0.1
     LANGUAGES CXX
 )
 
-add_library(libnet INTERFACE)
+add_library(libnet INTERFACE
+    skymarlin/net/listener_tcp.hpp
+    skymarlin/net/peer_tcp.hpp
+    skymarlin/net/peer_udp.hpp
+    skymarlin/bip_buffer.hpp
+    skymarlin/concurrent_map.hpp
+    skymarlin/concurrent_queue.hpp
+)
 add_library(skymarlin::libnet ALIAS libnet)
 
 target_compile_features(libnet INTERFACE cxx_std_20)
@@ -123,13 +130,13 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
         skymarlin/concurrent_map.test.cpp
         skymarlin/concurrent_queue.test.cpp
 
-        tests/network.test.cpp
+        tests/server.test.cpp
     )
 
     target_compile_features(tests PRIVATE cxx_std_20)
     target_link_libraries(tests PRIVATE skymarlin::libnet Catch2::Catch2WithMain)
 
-    CompileSchemas(tests "" tests tests/simple_message.fbs)
+    CompileSchemas(tests "" tests tests/hello.fbs)
 
     enable_testing()
     add_test(NAME libnet-tests COMMAND tests)

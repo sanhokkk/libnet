@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include <skymarlin/net/client.hpp>
+#include <skymarlin/net/tcp_client.hpp>
 #include <skymarlin/net/server.hpp>
 #include <tests/simple_message.hpp>
 
@@ -8,7 +8,7 @@
 namespace skymarlin::net::test {
 class SimpleClient final : public Client {
 public:
-    SimpleClient(boost::asio::io_context &ctx, tcp::socket &&socket, const ClientId id) :
+    SimpleClient(boost::asio::io_context &ctx, tcp::socket &&socket, const ClientID id) :
         Client(ctx, std::move(socket), id) {}
 
 private:
@@ -64,7 +64,7 @@ TEST_CASE("Disconnect from client", "[net]") {
         ServerConfig(PORT),
         server_ctx,
     };
-    ClientManager::init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientId id) {
+    ClientManager::init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientID id) {
         return std::make_unique<SimpleClient>(ctx, std::move(socket), id);
     });
     server.start();
@@ -99,7 +99,7 @@ TEST_CASE("Simple message exchange", "[net]") {
         ServerConfig(PORT),
         server_ctx,
     };
-    ClientManager::init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientId id) {
+    ClientManager::init([](boost::asio::io_context &ctx, tcp::socket &&socket, ClientID id) {
         return std::make_unique<SimpleClient>(ctx, std::move(socket), id);
     });
     server.start();
