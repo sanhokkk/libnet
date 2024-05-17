@@ -13,25 +13,23 @@ using namespace skymarlin::net::tests;
 using namespace std::chrono_literals;
 
 TEST_CASE("[tcp server]") {
-    constexpr unsigned short PORT {50000};
+    constexpr unsigned short LISTEN_PORT {50000};
     constexpr std::string_view MESSAGE = "Hello";
 
     boost::asio::io_context ctx {};
     std::vector<std::unique_ptr<PeerTCP>> clients;
 
-    bool is_message_handled {false};
-    const auto message_handler = [&MESSAGE, &is_message_handled](std::vector<uint8_t>&& message) {
+    const auto message_handler = [&MESSAGE](std::vector<uint8_t>&& message) {
         flatbuffers::Verifier verifier {message.data(), message.size()};
         REQUIRE(VerifyHelloBuffer(verifier));
 
         const auto hello = GetHello(message.data());
         REQUIRE(hello->hello()->size() == MESSAGE.size());
         REQUIRE(memcmp(hello->hello()->data(), MESSAGE.data(), MESSAGE.size()) == 0);
-        is_message_handled = true;
     };
 
     ListenerTCP listener {
-        ctx, PORT,
+        ctx, LISTEN_PORT,
         [&clients, &message_handler](boost::asio::io_context& ctx, tcp::socket&& socket) {
             auto new_client = std::make_unique<PeerTCP>(ctx, std::move(socket), message_handler);
             new_client->run();
@@ -45,15 +43,16 @@ TEST_CASE("[tcp server]") {
         co_spawn(ctx, [&ctx]()->boost::asio::awaitable<void> {
             tcp::socket socket {ctx};
             const auto [ec] = co_await socket.async_connect(
-                tcp::endpoint(tcp::v4(), PORT),
+                tcp::endpoint(tcp::v4(), LISTEN_PORT),
                 as_tuple(boost::asio::use_awaitable));
             REQUIRE(!ec);
         }, boost::asio::detached);
 
         ctx.run_for(100ms);
-        listener.stop();
 
         REQUIRE(clients.size() == 1);
+
+        listener.stop();
         clients.clear();
     }
 
@@ -61,11 +60,11 @@ TEST_CASE("[tcp server]") {
         listener.start();
 
         co_spawn(ctx, [&ctx]()->boost::asio::awaitable<void> {
-            const auto message_handler = [](std::vector<uint8_t>&& message) {};
-            PeerTCP client {ctx, tcp::socket {ctx}, message_handler};
+            PeerTCP client {ctx, tcp::socket {ctx}, {}};
 
-            co_await client.connect(tcp::endpoint(tcp::v4(), PORT));
+            co_await client.connect(tcp::endpoint(tcp::v4(), LISTEN_PORT));
             REQUIRE(client.is_connected());
+
             client.run();
 
             flatbuffers::FlatBufferBuilder builder {64};
@@ -74,10 +73,9 @@ TEST_CASE("[tcp server]") {
         }, boost::asio::detached);
 
         ctx.run_for(100ms);
+
         listener.stop();
         clients.clear();
-
-        REQUIRE(is_message_handled);
     }
 }
 

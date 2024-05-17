@@ -83,7 +83,6 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 
         tests/server.test.cpp
     )
-
     target_compile_features(tests PRIVATE cxx_std_20)
     target_link_libraries(tests PRIVATE skymarlin::libnet Catch2::Catch2WithMain)
 
@@ -91,4 +90,10 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 
     enable_testing()
     add_test(NAME libnet-tests COMMAND tests)
+
+    add_executable(benchmarks
+        skymarlin/concurrent_queue.bench.cpp
+    )
+    target_compile_features(benchmarks PRIVATE cxx_std_20)
+    target_link_libraries(benchmarks PRIVATE skymarlin::libnet Catch2::Catch2WithMain)
 endif()

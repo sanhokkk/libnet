@@ -63,8 +63,7 @@ inline void PeerUDP::open() {
     // Start handling packets
     worker_ = std::thread([this] {
         while (is_open_) {
-            if (receive_queue_.empty()) continue; //TODO: Remove busy-waiting <- CAUTION: Waiting for closed queue
-            auto packet = receive_queue_.pop();
+            auto packet = receive_queue_.pop_wait();
             if (!packet) return;
             packet_handler_(std::move(*packet));
         }

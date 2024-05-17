@@ -60,8 +60,7 @@ inline void PeerTCP::run() {
     // Start handling messages
     worker_ = std::thread([this] {
         while (is_connected_) {
-            if (receive_queue_.empty()) continue; //TODO: Remove busy waiting
-            auto message = receive_queue_.pop();
+            auto message = receive_queue_.pop_wait();
             if (!message) return;
             message_handler_(std::move(*message));
         }
@@ -88,6 +87,8 @@ inline boost::asio::awaitable<bool> PeerTCP::connect(const tcp::endpoint& remote
 
 inline void PeerTCP::disconnect() {
     if (!is_connected_.exchange(false)) return;
+
+    receive_queue_.clear();
 
     try {
         socket_.shutdown(tcp::socket::shutdown_both);
