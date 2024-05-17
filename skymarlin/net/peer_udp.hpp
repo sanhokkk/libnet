@@ -12,10 +12,11 @@ using boost::asio::ip::udp;
 
 class PeerUDP : boost::noncopyable {
 public:
-    PeerUDP(boost::asio::io_context& ctx, const udp::endpoint& endpoint,
+    PeerUDP(boost::asio::io_context& ctx, const udp::endpoint& local_endpoint, const udp::endpoint& remote_endpoint,
         std::function<void(std::vector<uint8_t>&&)>&& packet_handler, size_t receive_buffer_size);
     ~PeerUDP();
 
+    void open();
     void close();
     void send_packet(std::shared_ptr<flatbuffers::DetachedBuffer> packet);
 
@@ -27,7 +28,8 @@ private:
 
     boost::asio::io_context& ctx_;
     udp::socket socket_;
-    std::atomic<bool> is_open_ {true};
+    udp::endpoint remote_endpoint_;
+    std::atomic<bool> is_open_ {false};
 
     const size_t receive_buffer_size_;
     ConcurrentQueue<std::vector<uint8_t>> receive_queue_;
@@ -36,10 +38,21 @@ private:
     std::thread worker_;
 };
 
-inline PeerUDP::PeerUDP(boost::asio::io_context& ctx, const udp::endpoint& endpoint,
+inline PeerUDP::PeerUDP(boost::asio::io_context& ctx,
+    const udp::endpoint& local_endpoint, const udp::endpoint& remote_endpoint,
     std::function<void(std::vector<uint8_t>&&)>&& packet_handler, const size_t receive_buffer_size = 65536)
-    : ctx_(ctx), socket_(ctx_, endpoint),
-    packet_handler_(std::move(packet_handler)), receive_buffer_size_(receive_buffer_size) {
+    : ctx_(ctx), socket_(ctx_, local_endpoint),
+    remote_endpoint_(remote_endpoint),
+    receive_buffer_size_(receive_buffer_size), packet_handler_(std::move(packet_handler)) {}
+
+inline PeerUDP::~PeerUDP() {
+    close();
+    if (worker_.joinable()) worker_.join();
+}
+
+inline void PeerUDP::open() {
+    if (is_open_) return;
+
     // Start receiving packets
     co_spawn(ctx_, [this]()->boost::asio::awaitable<void> {
         while (is_open_) {
@@ -57,11 +70,8 @@ inline PeerUDP::PeerUDP(boost::asio::io_context& ctx, const udp::endpoint& endpo
         }
     });
     worker_.detach();
-}
 
-inline PeerUDP::~PeerUDP() {
-    close();
-    if (worker_.joinable()) worker_.join();
+    is_open_ = true;
 }
 
 inline void PeerUDP::close() {
@@ -72,17 +82,18 @@ inline void PeerUDP::close() {
     try {
         socket_.close();
     } catch (const boost::system::system_error& e) {
-        spdlog::error("[UDPClient] Error closing socket: {}", e.what());
+        spdlog::error("[PeerUDP] Error closing socket: {}", e.what());
     }
 }
 
 inline void PeerUDP::send_packet(std::shared_ptr<flatbuffers::DetachedBuffer> packet) {
     co_spawn(ctx_, [this, packet = std::move(packet)]()->boost::asio::awaitable<void> {
-        const auto [ec, _] = co_await socket_.async_send(
-            boost::asio::buffer(packet->data(), packet->size()), as_tuple(boost::asio::use_awaitable));
+        const auto [ec, _] = co_await socket_.async_send_to(
+            boost::asio::buffer(packet->data(), packet->size()), remote_endpoint_,
+            as_tuple(boost::asio::use_awaitable));
 
         if (ec) {
-            spdlog::error("[UDPClient] Error sending packet: {}", ec.what());
+            spdlog::error("[PeerUDP] Error sending packet: {}", ec.what());
             close();
         }
     }, boost::asio::detached);
@@ -94,7 +105,7 @@ inline boost::asio::awaitable<void> PeerUDP::receive_packet() {
 
     if (const auto [ec, _] = co_await socket_.async_receive(
         boost::asio::buffer(buffer.data(), buffer.size()), as_tuple(boost::asio::use_awaitable)); ec) {
-        spdlog::error("[UDPClient] Error receiving packet: {}", ec.what());
+        spdlog::error("[PeerUDP] Error receiving packet: {}", ec.what());
         close();
         co_return;
     }

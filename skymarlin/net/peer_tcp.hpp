@@ -15,6 +15,8 @@ public:
         std::function<void(std::vector<uint8_t>&&)>&& message_handler);
     ~PeerTCP();
 
+    void run();
+    boost::asio::awaitable<bool> connect(const tcp::endpoint& remote_endpoint);
     void disconnect();
     void send_message(std::shared_ptr<flatbuffers::DetachedBuffer> message);
     void set_no_delay(bool delay);
@@ -27,7 +29,7 @@ private:
 
     boost::asio::io_context& ctx_;
     tcp::socket socket_;
-    std::atomic<bool> is_connected_ {true};
+    std::atomic<bool> is_connected_;
 
     ConcurrentQueue<std::vector<uint8_t>> receive_queue_;
     ConcurrentQueue<std::shared_ptr<flatbuffers::DetachedBuffer>> send_queue_ {};
@@ -39,8 +41,15 @@ private:
 
 inline PeerTCP::PeerTCP(boost::asio::io_context& ctx, tcp::socket&& socket,
     std::function<void(std::vector<uint8_t>&&)>&& message_handler)
-    : ctx_(ctx), socket_(std::move(socket)),
-    message_handler_(std::move(message_handler)) {
+    : ctx_(ctx), socket_(std::move(socket)), is_connected_(socket_.is_open()), message_handler_(std::move(message_handler)) {}
+
+inline PeerTCP::~PeerTCP() {
+    disconnect();
+
+    if (worker_.joinable()) worker_.join();
+}
+
+inline void PeerTCP::run() {
     // Start receiving messages
     co_spawn(ctx_, [this]()->boost::asio::awaitable<void> {
         while (is_connected_) {
@@ -60,10 +69,21 @@ inline PeerTCP::PeerTCP(boost::asio::io_context& ctx, tcp::socket&& socket,
     worker_.detach();
 }
 
-inline PeerTCP::~PeerTCP() {
-    disconnect();
+inline boost::asio::awaitable<bool> PeerTCP::connect(const tcp::endpoint& remote_endpoint) {
+    if (is_connected_) {
+        spdlog::error("[PeerTCP] Socket is already connected");
+        co_return false;
+    }
 
-    if (worker_.joinable()) worker_.join();
+    const auto [ec] = co_await socket_.async_connect(remote_endpoint, as_tuple(boost::asio::use_awaitable));
+    if (ec) {
+        spdlog::error("[PeerTCP] Error connecting to {}:{}", remote_endpoint.address().to_string(),
+            remote_endpoint.port());
+        co_return false;
+    }
+
+    is_connected_ = true;
+    co_return true;
 }
 
 inline void PeerTCP::disconnect() {
@@ -75,7 +95,7 @@ inline void PeerTCP::disconnect() {
         //TODO: Process remaining send queue?
         socket_.close();
     } catch (const boost::system::system_error& e) {
-        spdlog::error("[TCPConnection] Error shutting down socket: {}", e.what());
+        spdlog::error("[PeerTCP] Error shutting down socket: {}", e.what());
     }
 }
 
@@ -93,7 +113,7 @@ inline void PeerTCP::send_message(std::shared_ptr<flatbuffers::DetachedBuffer> m
 
             if (auto [ec, _] = co_await socket_.async_send(boost::asio::buffer((*message)->data(), (*message)->size()),
                 as_tuple(boost::asio::use_awaitable)); ec) {
-                spdlog::error("[TCPConnection] Error sending message: {}", ec.what());
+                spdlog::error("[PeerTCP] Error sending message: {}", ec.what());
                 disconnect();
                 co_return;
             }
@@ -107,7 +127,7 @@ inline void PeerTCP::set_no_delay(const bool delay) {
     try {
         socket_.set_option(tcp::no_delay(delay));
     } catch (const boost::system::system_error& e) {
-        spdlog::error("[TCPConnection] Error setting no-delay: {}", e.what());
+        spdlog::error("[PeerTCP] Error setting no-delay: {}", e.what());
     }
 }
 
