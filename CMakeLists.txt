@@ -4,24 +4,6 @@ project(libnet
     LANGUAGES CXX
 )
 
-add_library(libnet INTERFACE
-    skymarlin/net/listener_tcp.hpp
-    skymarlin/net/peer_tcp.hpp
-    skymarlin/net/peer_udp.hpp
-    skymarlin/bip_buffer.hpp
-    skymarlin/concurrent_map.hpp
-    skymarlin/concurrent_queue.hpp
-)
-add_library(skymarlin::libnet ALIAS libnet)
-
-target_compile_features(libnet INTERFACE cxx_std_20)
-
-target_include_directories(libnet
-    INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-#        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>
-)
-
 
 ### Dependencies ###
 include(FetchContent)
@@ -45,6 +27,19 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
+
+### Targets ###
+add_library(libnet INTERFACE
+    skymarlin/net/listener_tcp.hpp
+    skymarlin/net/peer_tcp.hpp
+    skymarlin/net/peer_udp.hpp
+    skymarlin/bip_buffer.hpp
+    skymarlin/concurrent_map.hpp
+    skymarlin/concurrent_queue.hpp
+)
+add_library(skymarlin::libnet ALIAS libnet)
+target_compile_features(libnet INTERFACE cxx_std_20)
+target_include_directories(libnet INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 target_link_libraries(libnet
     INTERFACE
     Boost::system
@@ -52,53 +47,9 @@ target_link_libraries(libnet
     flatbuffers
 )
 
-
-### Packaging ###
-include(GNUInstallDirs)
-
-install(
-    TARGETS libnet spdlog flatbuffers
-    EXPORT libnet-targets
-)
-install(
-    DIRECTORY skymarlin/net
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/skymarlin
-)
-install(
-    DIRECTORY skymarlin/util
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/skymarlin
-)
-
-install(EXPORT libnet-targets
-    FILE libnet-targets.cmake
-    NAMESPACE skymarlin::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/skymarlin
-)
-
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    ${CMAKE_CURRENT_LIST_DIR}/libnet-config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/libnet-config.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/skymarlin
-)
-
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/libnet-config-version.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY ExactVersion
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/libnet-config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/libnet-config-version.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/skymarlin
-)
-
-
-### Utilities ###
-function(CompileSchemas target options out_path schemas)
+function(skymarlin_compile_schemas target options out_path schemas)
     message("Schemas to compile: ${schemas}")
-    set(compile_target_name "compile_schemas_${target}")
+    set(compile_target_name "skymarlin_compile_schemas_${target}")
     add_custom_target(
         ${compile_target_name}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -136,7 +87,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     target_compile_features(tests PRIVATE cxx_std_20)
     target_link_libraries(tests PRIVATE skymarlin::libnet Catch2::Catch2WithMain)
 
-    CompileSchemas(tests "" tests tests/hello.fbs)
+    skymarlin_compile_schemas(tests "" tests tests/hello.fbs)
 
     enable_testing()
     add_test(NAME libnet-tests COMMAND tests)
