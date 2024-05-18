@@ -1,9 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
-#include <skymarlin/concurrent_queue.hpp>
+#include <sanhok/concurrent_queue.hpp>
+
+using namespace sanhok;
 
 TEST_CASE("[ConcurrentQueue]") {
-    using namespace skymarlin;
 
     BENCHMARK("pop() busy-waits; 1 consumer, 2 producers, 1000000 items") {
         constexpr size_t ITEMS = 1000000;

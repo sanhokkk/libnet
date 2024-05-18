@@ -2,7 +2,7 @@
 
 #include <span>
 
-namespace skymarlin {
+namespace sanhok {
 template <typename T>
 class BipBuffer {
 public:

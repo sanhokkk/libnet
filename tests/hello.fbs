@@ -1,4 +1,4 @@
-namespace skymarlin.net.tests;
+namespace sanhok.net.tests;
 
 table Hello {
     hello: string;

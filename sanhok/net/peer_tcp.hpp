@@ -3,10 +3,10 @@
 #include <boost/asio.hpp>
 #include <boost/core/noncopyable.hpp>
 #include <flatbuffers/flatbuffers.h>
-#include <skymarlin/concurrent_queue.hpp>
+#include <sanhok/concurrent_queue.hpp>
 #include <spdlog/spdlog.h>
 
-namespace skymarlin::net {
+namespace sanhok::net {
 using boost::asio::ip::tcp;
 
 class PeerTCP final : boost::noncopyable {

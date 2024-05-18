@@ -4,7 +4,7 @@
 #include <shared_mutex>
 #include <unordered_map>
 
-namespace skymarlin {
+namespace sanhok {
 template <typename KeyType, typename ValueType>
 class ConcurrentMap {
 public:

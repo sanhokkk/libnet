@@ -1,9 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
-#include <skymarlin/concurrent_map.hpp>
+#include <sanhok/concurrent_map.hpp>
 
 #include <thread>
 
-using namespace skymarlin;
+using namespace sanhok;
 
 TEST_CASE("Insert/Erase thread safety", "[ConcurrentMap]")
 {

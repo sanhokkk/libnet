@@ -1,11 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
-#include <skymarlin/concurrent_queue.hpp>
+#include <sanhok/concurrent_queue.hpp>
 
 #include <chrono>
 #include <iostream>
 #include <thread>
 
-using namespace skymarlin;
+using namespace sanhok;
 using namespace std::chrono_literals;
 
 TEST_CASE("[ConcurrentQueue]") {

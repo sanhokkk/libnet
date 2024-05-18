@@ -1,15 +1,15 @@
 #include <catch2/catch_test_macros.hpp>
-#include <skymarlin/net/listener_tcp.hpp>
-#include <skymarlin/net/peer_tcp.hpp>
-#include <skymarlin/net/peer_udp.hpp>
+#include <sanhok/net/listener_tcp.hpp>
+#include <sanhok/net/peer_tcp.hpp>
+#include <sanhok/net/peer_udp.hpp>
 #include <tests/hello.hpp>
 
 #include <chrono>
 #include <cstring>
 #include <iostream>
 
-using namespace skymarlin::net;
-using namespace skymarlin::net::tests;
+using namespace sanhok::net;
+using namespace sanhok::net::tests;
 using namespace std::chrono_literals;
 
 TEST_CASE("[tcp server]") {

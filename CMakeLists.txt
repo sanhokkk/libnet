@@ -30,14 +30,14 @@ FetchContent_MakeAvailable(spdlog)
 
 ### Targets ###
 add_library(libnet INTERFACE
-    skymarlin/net/listener_tcp.hpp
-    skymarlin/net/peer_tcp.hpp
-    skymarlin/net/peer_udp.hpp
-    skymarlin/bip_buffer.hpp
-    skymarlin/concurrent_map.hpp
-    skymarlin/concurrent_queue.hpp
+    sanhok/net/listener_tcp.hpp
+    sanhok/net/peer_tcp.hpp
+    sanhok/net/peer_udp.hpp
+    sanhok/bip_buffer.hpp
+    sanhok/concurrent_map.hpp
+    sanhok/concurrent_queue.hpp
 )
-add_library(skymarlin::libnet ALIAS libnet)
+add_library(sanhok::libnet ALIAS libnet)
 target_compile_features(libnet INTERFACE cxx_std_20)
 target_include_directories(libnet INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 target_link_libraries(libnet
@@ -78,13 +78,13 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     FetchContent_MakeAvailable(Catch2)
 
     add_executable(tests
-        skymarlin/concurrent_map.test.cpp
-        skymarlin/concurrent_queue.test.cpp
+        sanhok/concurrent_map.test.cpp
+        sanhok/concurrent_queue.test.cpp
 
         tests/server.test.cpp
     )
     target_compile_features(tests PRIVATE cxx_std_20)
-    target_link_libraries(tests PRIVATE skymarlin::libnet Catch2::Catch2WithMain)
+    target_link_libraries(tests PRIVATE sanhok::libnet Catch2::Catch2WithMain)
 
     skymarlin_compile_schemas(tests "" tests tests/hello.fbs)
 
@@ -92,8 +92,8 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     add_test(NAME libnet-tests COMMAND tests)
 
     add_executable(benchmarks
-        skymarlin/concurrent_queue.bench.cpp
+        sanhok/concurrent_queue.bench.cpp
     )
     target_compile_features(benchmarks PRIVATE cxx_std_20)
-    target_link_libraries(benchmarks PRIVATE skymarlin::libnet Catch2::Catch2WithMain)
+    target_link_libraries(benchmarks PRIVATE sanhok::libnet Catch2::Catch2WithMain)
 endif()
