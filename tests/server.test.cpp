@@ -98,11 +98,12 @@ TEST_CASE("PeerUDP receives/sends Hello", "[udp server]") {
         packet_loss -= 1;
     };
 
-    PeerUDP server {ctx, SERVER_ENDPOINT, CLIENT_ENDPOINT, packet_handler};
+    PeerUDP server {ctx, SERVER_ENDPOINT, packet_handler};
     server.open();
 
     co_spawn(ctx, [&ctx, &SERVER_ENDPOINT, &CLIENT_ENDPOINT, &MESSAGE, &packet_handler]()->boost::asio::awaitable<void> {
-        PeerUDP client {ctx, CLIENT_ENDPOINT, SERVER_ENDPOINT, packet_handler};
+        PeerUDP client {ctx, CLIENT_ENDPOINT, packet_handler};
+        client.connect(SERVER_ENDPOINT);
         client.open();
 
         for (int i = 0; i < 10; ++i) {

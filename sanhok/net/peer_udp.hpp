@@ -12,10 +12,11 @@ using boost::asio::ip::udp;
 
 class PeerUDP : boost::noncopyable {
 public:
-    PeerUDP(boost::asio::io_context& ctx, const udp::endpoint& local_endpoint, const udp::endpoint& remote_endpoint,
+    PeerUDP(boost::asio::io_context& ctx, const udp::endpoint& local_endpoint,
         std::function<void(std::vector<uint8_t>&&)>&& packet_handler, size_t receive_buffer_size);
     ~PeerUDP();
 
+    void connect(const udp::endpoint& remote_endpoint);
     void open();
     void close();
     void send_packet(std::shared_ptr<flatbuffers::DetachedBuffer> packet);
@@ -28,7 +29,6 @@ private:
 
     boost::asio::io_context& ctx_;
     udp::socket socket_;
-    udp::endpoint remote_endpoint_;
     std::atomic<bool> is_open_ {false};
 
     const size_t receive_buffer_size_;
@@ -39,15 +39,22 @@ private:
 };
 
 inline PeerUDP::PeerUDP(boost::asio::io_context& ctx,
-    const udp::endpoint& local_endpoint, const udp::endpoint& remote_endpoint,
-    std::function<void(std::vector<uint8_t>&&)>&& packet_handler, const size_t receive_buffer_size = 65536)
+    const udp::endpoint& local_endpoint, std::function<void(std::vector<uint8_t>&&)>&& packet_handler,
+    const size_t receive_buffer_size = 65536)
     : ctx_(ctx), socket_(ctx_, local_endpoint),
-    remote_endpoint_(remote_endpoint),
     receive_buffer_size_(receive_buffer_size), packet_handler_(std::move(packet_handler)) {}
 
 inline PeerUDP::~PeerUDP() {
     close();
     if (worker_.joinable()) worker_.join();
+}
+
+inline void PeerUDP::connect(const udp::endpoint& remote_endpoint) {
+    try {
+        socket_.connect(remote_endpoint);
+    } catch (const boost::system::system_error& e) {
+        spdlog::error("[PeerUDP] Error connecting socket: {}", e.what());
+    }
 }
 
 inline void PeerUDP::open() {
@@ -87,9 +94,8 @@ inline void PeerUDP::close() {
 
 inline void PeerUDP::send_packet(std::shared_ptr<flatbuffers::DetachedBuffer> packet) {
     co_spawn(ctx_, [this, packet = std::move(packet)]()->boost::asio::awaitable<void> {
-        const auto [ec, _] = co_await socket_.async_send_to(
-            boost::asio::buffer(packet->data(), packet->size()), remote_endpoint_,
-            as_tuple(boost::asio::use_awaitable));
+        const auto [ec, _] = co_await socket_.async_send(
+            boost::asio::buffer(packet->data(), packet->size()), as_tuple(boost::asio::use_awaitable));
 
         if (ec) {
             spdlog::error("[PeerUDP] Error sending packet: {}", ec.what());
