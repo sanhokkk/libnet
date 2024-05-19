@@ -22,6 +22,7 @@ public:
     void send_packet(std::shared_ptr<flatbuffers::DetachedBuffer> packet);
 
     bool is_open() const { return is_open_; }
+    udp::endpoint local_endpoint() const { return socket_.local_endpoint(); }
     udp::endpoint remote_endpoint() const { return socket_.remote_endpoint(); }
 
 private:

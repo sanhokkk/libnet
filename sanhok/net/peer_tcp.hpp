@@ -22,6 +22,7 @@ public:
     void set_no_delay(bool delay);
 
     bool is_connected() const { return is_connected_; }
+    tcp::endpoint local_endpoint() const { return socket_.local_endpoint(); }
     tcp::endpoint remote_endpoint() const { return socket_.remote_endpoint(); }
 
 private:
