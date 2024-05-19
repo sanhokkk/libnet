@@ -29,6 +29,7 @@ public:
 
     void erase(const KeyType& key) {
         std::unique_lock lock {mutex_};
+        if (!map_.contains(key)) return;
         map_.erase(key);
     }
 

@@ -10,7 +10,7 @@ using boost::asio::ip::tcp;
 class ListenerTCP final : boost::noncopyable {
 public:
     ListenerTCP(boost::asio::io_context& ctx, unsigned short port,
-        std::function<void(boost::asio::io_context&, tcp::socket&&)>&& client_factory);
+        std::function<void(boost::asio::io_context&, tcp::socket&&)>&& on_acceptance);
     ~ListenerTCP() = default;
 
     void start();
@@ -21,15 +21,15 @@ private:
 
     boost::asio::io_context& ctx_;
     tcp::acceptor acceptor_;
-    std::function<void(boost::asio::io_context&, tcp::socket&&)> client_factory_;
+    std::function<void(boost::asio::io_context&, tcp::socket&&)> on_acceptance_;
 
     std::atomic<bool> listening_ {false};
 };
 
 inline ListenerTCP::ListenerTCP(boost::asio::io_context& ctx, const unsigned short port,
-    std::function<void(boost::asio::io_context&, tcp::socket&&)>&& client_factory)
+    std::function<void(boost::asio::io_context&, tcp::socket&&)>&& on_acceptance)
     : ctx_(ctx), acceptor_(ctx, tcp::endpoint(tcp::v4(), port)),
-    client_factory_(std::move(client_factory)) {}
+    on_acceptance_(std::move(on_acceptance)) {}
 
 inline void ListenerTCP::start() {
     listening_ = true;
@@ -59,7 +59,7 @@ inline boost::asio::awaitable<void> ListenerTCP::listen() {
         }
 
         spdlog::info("[ListenerTCP] Accepts from {}:{}", socket.remote_endpoint().address().to_string(), socket.remote_endpoint().port());
-        client_factory_(ctx_, std::move(socket));
+        on_acceptance_(ctx_, std::move(socket));
     }
 }
 }
